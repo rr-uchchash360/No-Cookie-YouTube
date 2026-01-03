@@ -1,0 +1,37 @@
+# Minimal .gitignore for Chrome Extension
+
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
+
+# Chrome Extension
+_metadata/
+*.pem
+*.crx
+
+# Development
+node_modules/
+.env
+.env.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Build artifacts
+dist/
+build/
+web-ext-artifacts/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Logs
+*.log
+chrome-debug.log

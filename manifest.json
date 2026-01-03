@@ -1,0 +1,65 @@
+{
+  "manifest_version": 3,
+  "name": "No Cookie YouTube",
+  "version": "1.0.0",
+  "description": "Watch YouTube without cookies, trackers and annoying ads.",
+  "author": "Md. Rafiur Rahman (rr-uchchash360) - https://github.com/rr-uchchash360",
+  
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  
+  "permissions": [
+    "storage",
+    "declarativeNetRequest",
+    "declarativeNetRequestWithHostAccess",
+    "tabs"
+  ],
+  
+  "host_permissions": [
+    "*://*.youtube.com/*",
+    "*://yout-ube.com/*"
+  ],
+  
+  "declarative_net_request": {
+    "rule_resources": [{
+      "id": "ruleset_1",
+      "enabled": true,
+      "path": "rules.json"
+    }]
+  },
+  
+  "background": {
+    "service_worker": "background.js"
+  },
+  
+  "content_scripts": [{
+    "matches": ["*://*.youtube.com/*"],
+    "js": ["content.js"],
+    "run_at": "document_start"
+  }],
+  
+  "action": {
+    "default_popup": "popup/popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  
+  "options_ui": {
+    "page": "popup/popup.html",
+    "open_in_tab": false
+  },
+  
+  "web_accessible_resources": [{
+    "resources": ["icons/*"],
+    "matches": ["<all_urls>"]
+  }, {
+    "resources": ["popup/settings.html"],
+    "matches": ["<all_urls>"]
+  }]
+}

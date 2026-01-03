@@ -1,0 +1,159 @@
+<div class="settings-content">
+  <!-- Settings Header -->
+  <div class="settings-header">
+    <button class="settings-back-btn" id="settingsBackBtn">
+      <i class="fas fa-arrow-left"></i>
+    </button>
+    <div class="settings-logo-container">
+      <img src="../icons/icon48.png" alt="YouTube Redirector" class="settings-logo">
+    </div>
+    <div class="settings-title-container">
+      <h1>No Cookie YouTube Settings</h1>
+      <div class="settings-subtitle">Configure according to your preferences</div>
+    </div>
+  </div>
+
+  <!-- Scrollable Settings Content -->
+  <div class="menu-content">
+    <!-- Theme Section -->
+    <div class="settings-section">
+      <h2><i class="fas fa-palette"></i> Appearance</h2>
+      <div class="theme-selector">
+        <div class="theme-header">
+          <h3>Theme</h3>
+          <div class="theme-indicator" id="themeIndicator">
+            <span class="theme-dot"></span>
+            <span class="theme-text">System</span>
+          </div>
+        </div>
+        <div class="theme-description">
+          Choose your preferred theme for the extension
+        </div>
+        <div class="theme-options">
+          <div class="theme-card" data-theme="dark">
+            <div class="theme-preview dark-theme">
+              <div class="preview-header"></div>
+              <div class="preview-content">
+                <div class="preview-card"></div>
+                <div class="preview-card"></div>
+              </div>
+            </div>
+            <div class="theme-info">
+              <h4>Dark</h4>
+              <p>Dark mode</p>
+            </div>
+            <div class="theme-check">
+              <i class="fas fa-check"></i>
+            </div>
+          </div>
+          <div class="theme-card" data-theme="light">
+            <div class="theme-preview light-theme">
+              <div class="preview-header"></div>
+              <div class="preview-content">
+                <div class="preview-card"></div>
+                <div class="preview-card"></div>
+              </div>
+            </div>
+            <div class="theme-info">
+              <h4>Light</h4>
+              <p>Light mode</p>
+            </div>
+            <div class="theme-check">
+              <i class="fas fa-check"></i>
+            </div>
+          </div>
+          <div class="theme-card" data-theme="system">
+            <div class="theme-preview system-theme">
+              <div class="preview-header"></div>
+              <div class="preview-content">
+                <div class="preview-card"></div>
+                <div class="preview-card"></div>
+              </div>
+            </div>
+            <div class="theme-info">
+              <h4>System</h4>
+              <p>Follows OS</p>
+            </div>
+            <div class="theme-check">
+              <i class="fas fa-check"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Advanced Options Section -->
+    <div class="settings-section">
+      <h2><i class="fas fa-sliders-h"></i> Advanced Options</h2>
+      <div class="option-group">
+        <div class="option-item">
+          <div class="option-info">
+            <h4>Redirect Delay</h4>
+            <p>Time to wait before redirecting (milliseconds)</p>
+          </div>
+          <div class="option-control">
+            <input type="number" id="redirectDelay" min="0" max="5000" step="100" value="100">
+            <span>ms</span>
+          </div>
+        </div>
+        <div class="option-item">
+          <div class="option-info">
+            <h4>Show Redirect Indicator</h4>
+            <p>Display visual indicator when redirect occurs</p>
+          </div>
+          <div class="option-control">
+            <label class="switch small">
+              <input type="checkbox" id="showIndicator" checked>
+              <span class="slider"></span>
+            </label>
+          </div>
+        </div>
+        <div class="option-item">
+          <div class="option-info">
+            <h4>Auto-refresh on Toggle</h4>
+            <p>Refresh YouTube tabs when toggling redirect</p>
+          </div>
+          <div class="option-control">
+            <label class="switch small">
+              <input type="checkbox" id="autoRefresh" checked>
+              <span class="slider"></span>
+            </label>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Reset Section -->
+    <div class="settings-section">
+      <h2><i class="fas fa-redo"></i> Reset</h2>
+      <div class="reset-options">
+        <button class="reset-btn" id="resetSettingsBtn">
+          <i class="fas fa-undo"></i>
+          <span>Reset to Default Settings</span>
+        </button>
+        <button class="reset-btn danger" id="resetAllBtn">
+          <i class="fas fa-trash"></i>
+          <span>Reset All Data</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Info Section -->
+    <div class="info-section">
+      <h3><i class="fas fa-info-circle"></i> About</h3>
+      <div class="info-content" id="infoContent">
+        <!-- Will be populated by JavaScript -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer - Fixed at bottom -->
+  <div class="footer">
+    <p class="footer-text">
+      <i class="fas fa-shield-alt"></i> No tracking • No analytics • Privacy first
+    </p>
+    <p class="footer-note">
+      Changes are saved automatically
+    </p>
+  </div>
+</div>

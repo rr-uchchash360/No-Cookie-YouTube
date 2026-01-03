@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>No Cookie YouTube</title>
+  <link rel="stylesheet" href="popup.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="container">
+    <!-- Main Menu (Default View) -->
+    <div id="mainMenu" class="menu-view">
+      <!-- Header - Fixed at top -->
+      <div class="header">
+        <div class="logo-container">
+          <img src="../icons/icon48.png" alt="No Cookie YouTube" class="logo">
+        </div>
+        <div class="title-container">
+          <h1>No Cookie YouTube</h1>
+          <div class="subtitle">
+            <span>Privacy-focused YouTube without cookies</span>
+          </div>
+        </div>
+        <button class="settings-btn" id="openSettingsBtn" title="Advanced Settings">
+          <i class="fas fa-sliders-h"></i>
+        </button>
+      </div>
+
+      <!-- Scrollable Content Area -->
+      <div class="menu-content">
+        <!-- Status Card - Made more compact -->
+        <div class="youtube-card status-card compact">
+          <div class="status-header">
+            <h2><i class="fas fa-satellite-dish"></i> No Cookie Mode</h2>
+            <div class="status-indicator" id="statusIndicator">
+              <span class="status-dot"></span>
+              <span class="status-text">Loading...</span>
+            </div>
+          </div>
+          
+          <div class="compact-toggle-section">
+            <div class="wide-switch-container">
+              <div class="material-switch wide-switch">
+                <label class="big-switch wide">
+                  <input type="checkbox" id="toggleSwitch">
+                  <span class="slider"></span>
+                </label>
+              </div>
+              <p class="compact-toggle-description" id="statusDescription">
+                Toggle to enable/disable No Cookie YouTube
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Actions Card -->
+        <div class="youtube-card actions-card">
+          <h2><i class="fas fa-cogs"></i> Quick Actions</h2>
+          <div class="youtube-actions">
+            <button class="youtube-btn youtube-btn-primary" id="testBtn">
+              <i class="fas fa-play"></i> Test No Cookie Now
+            </button>
+            <button class="youtube-btn youtube-btn-secondary" id="refreshBtn">
+              <i class="fas fa-sync-alt"></i> Refresh YouTube Tabs
+            </button>
+          </div>
+        </div>
+
+        <!-- Features Card -->
+        <div class="youtube-card features-card">
+          <h2><i class="fas fa-bolt"></i> Features</h2>
+          <ul class="features-list collapsed" id="featuresList">
+            <li><i class="fas fa-play-circle"></i> Watch YouTube without annoying ad</li>
+            <li><i class="fas fa-microchip"></i> Reduces memory consumption upto 80%</li>
+            <li><i class="fas fa-rocket"></i> Faster page loading</li>
+            <li><i class="fas fa-memory"></i> Lower CPU usage</li>
+            <li><i class="fas fa-battery-full"></i> Better battery life</li>
+            <li><i class="fas fa-shield-alt"></i> Blocks tracking cookies</li>
+            <li><i class="fas fa-link"></i> Preserves video parameters</li>
+            <li><i class="fas fa-user-secret"></i> Zero data collection</li>
+          </ul>
+          
+          <div class="features-toggle">
+            <button class="features-toggle-btn" id="featuresToggleBtn">
+              <span>Show More</span>
+              <i class="fas fa-chevron-down"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- GitHub Attribution -->
+        <div class="github-attribution" id="githubAttribution">
+          <i class="fab fa-github"></i>
+          <span>Open source • Developed by rr-uchchash360</span>
+        </div>
+      </div>
+
+      <!-- Footer - Fixed at bottom -->
+      <div class="footer">
+        <p class="footer-text">
+          <i class="fas fa-shield-alt"></i> No tracking • No analytics • Privacy first
+        </p>
+        <p class="footer-note">
+          Click extension icon in toolbar to reopen this panel
+        </p>
+      </div>
+    </div>
+
+    <!-- Settings Menu (Options Page Loaded Here) -->
+    <div id="settingsMenu" class="menu-view" style="display: none;">
+      <!-- Content will be dynamically loaded -->
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
