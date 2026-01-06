@@ -102,26 +102,30 @@ Access settings by clicking the gear icon in the extension popup:
 - Clear all extension data
 
 ## 🔧 How It Works
-
-The extension uses Chrome's Declarative Net Request API to seamlessly redirect:
-- YouTube video pages (`/watch`, `/shorts`, `/embed`)
-- From `youtube.com` → `youtube-nocookie.com` (Google's privacy-friendly domain)
-- Preserves all video parameters and functionality
-
-## 🔐 Privacy & Security
-
-### What We **DO NOT** Collect:
-- ❌ No browsing history
-- ❌ No personal information
-- ❌ No video preferences
-- ❌ No analytics data
-- ❌ No tracking data of any kind
-
-### What We **DO**:
-- ✅ Local storage for settings only
-- ✅ Zero external network calls
-- ✅ All processing happens locally
-- ✅ Open source for transparency
+ 
+ The extension uses a multi-layered approach to ensure privacy and playback reliability:
+ 
+ 1.  **Smart Redirects**: The content script detects YouTube visits (`/watch`, `/shorts`) and seamlessly redirects to a local **"Cinema Mode" Player**.
+ 2.  **Local Player**: Videos are loaded inside a secure, extension-hosted page (`player/player.html`) rather than on YouTube.com.
+ 3.  **Privacy Shield**:
+     - Uses `youtube-nocookie.com` for the embed source.
+     - Employs **Header Spoofing** to present requests as trusted internal traffic, preventing "Embed Blocked" errors.
+     - Strips invasive cookies and tracking parameters.
+ 
+ ## 🔐 Privacy & Security
+ 
+ ### What We **DO NOT** Collect:
+ - ❌ No browsing history
+ - ❌ No personal information
+ - ❌ No video preferences
+ - ❌ No analytics data
+ - ❌ No tracking data of any kind
+ 
+ ### What We **DO**:
+ - ✅ Local storage for settings only
+ - ✅ Zero external network calls (besides the video stream itself)
+ - ✅ All processing happens locally
+ - ✅ Open source for transparency
 
 ## 🛠️ Development
 
@@ -129,16 +133,19 @@ The extension uses Chrome's Declarative Net Request API to seamlessly redirect:
 ```
 no-cookie-youtube/
 ├── icons/                 # Extension icons
+├── player/                # Local Player Module
+│   ├── player.html       # Player container
+│   ├── player.js         # Playback logic
+│   └── player.css        # Cinematic styles
 ├── popup/                # Popup UI
 │   ├── popup.html       # Main popup
 │   ├── popup.js         # Popup logic
 │   ├── popup.css        # Popup styles
 │   └── settings.html       # Settings page
 ├── background.js         # Background service worker
-├── content.js           # Content script for YouTube
+├── content.js           # Redirect logic
 ├── manifest.json        # Extension manifest
-└── rules.json          # Declarative Net Request rules
- 
+└── rules.json          # Network rules & Header spoofing
 ```
 
 ### Building from Source

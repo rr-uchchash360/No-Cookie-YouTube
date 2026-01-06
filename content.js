@@ -20,12 +20,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 chrome.storage.local.get(['enabled', 'showIndicator'], (result) => {
   const isEnabled = result.enabled !== false;
   const showIndicator = result.showIndicator !== false;
-  
+
   // Only show indicator if setting is enabled
   if (showIndicator) {
     updateRedirectState(isEnabled);
   }
-  
+
   // If enabled and on YouTube, try redirect
   if (isEnabled && window.location.hostname.includes('youtube.com')) {
     attemptRedirect();
@@ -38,17 +38,17 @@ function updateRedirectState(enabled) {
     clearTimeout(indicatorTimeout);
     indicatorTimeout = null;
   }
-  
+
   // Remove any existing indicators first
   const existingIndicator = document.getElementById('redirect-indicator');
   if (existingIndicator) {
     existingIndicator.remove();
   }
-  
+
   // Create indicator based on state
   const indicator = document.createElement('div');
   indicator.id = 'redirect-indicator';
-  
+
   if (enabled) {
     // Green indicator for active redirect
     indicator.style.cssText = `
@@ -104,19 +104,19 @@ function updateRedirectState(enabled) {
       No Cookie YouTube: Inactive
     `;
   }
-  
+
   // Function to append indicator to DOM
   const appendIndicator = () => {
     if (document.body) {
       document.body.appendChild(indicator);
-      
+
       // Start fade out after 2.7 seconds
       indicatorTimeout = setTimeout(() => {
         if (indicator.parentNode && indicator.style.opacity === '1') {
           indicator.style.opacity = '0';
         }
       }, 2700);
-      
+
       // Remove from DOM after 3 seconds
       indicatorTimeout = setTimeout(() => {
         if (indicator.parentNode) {
@@ -126,7 +126,7 @@ function updateRedirectState(enabled) {
       }, 3000);
     }
   };
-  
+
   // Append to DOM based on current state
   if (document.readyState === 'loading') {
     // Wait for DOM to be ready
@@ -140,21 +140,33 @@ function updateRedirectState(enabled) {
 // Fallback redirect function
 function attemptRedirect() {
   const currentUrl = window.location.href;
-  
+
   // Check if this is a YouTube video page or shorts
-  const isVideoPage = currentUrl.includes('/watch') || currentUrl.includes('/shorts/');
+  const isWatchPage = currentUrl.includes('/watch?v=');
+  const isShortsPage = currentUrl.includes('/shorts/');
   const isYouTubeDomain = currentUrl.includes('youtube.com');
-  const isAlreadyRedirected = currentUrl.includes('yout-ube.com');
-  
-  if (isVideoPage && isYouTubeDomain && !isAlreadyRedirected) {
+  const isAlreadyRedirected = currentUrl.includes('player.html') || currentUrl.includes('youtube-nocookie.com');
+
+  if ((isWatchPage || isShortsPage) && isYouTubeDomain && !isAlreadyRedirected) {
     try {
-      const newUrl = currentUrl.replace('youtube.com', 'yout-ube.com');
-      console.log('Redirecting to:', newUrl);
-      
-      // Use replace to avoid adding to history
-      setTimeout(() => {
-        window.location.replace(newUrl);
-      }, 100);
+      let videoId = '';
+
+      if (isWatchPage) {
+        const urlParams = new URLSearchParams(window.location.search);
+        videoId = urlParams.get('v');
+      } else if (isShortsPage) {
+        videoId = currentUrl.split('/shorts/')[1].split('?')[0];
+      }
+
+      if (videoId) {
+        const playerUrl = chrome.runtime.getURL(`player/player.html?v=${videoId}`);
+        console.log('Redirecting to local player:', playerUrl);
+
+        // Use replace to avoid adding to history
+        setTimeout(() => {
+          window.location.replace(playerUrl);
+        }, 100);
+      }
     } catch (error) {
       console.error('Redirect failed:', error);
     }
@@ -167,7 +179,7 @@ window.addEventListener('beforeunload', () => {
     clearTimeout(indicatorTimeout);
     indicatorTimeout = null;
   }
-  
+
   const existingIndicator = document.getElementById('redirect-indicator');
   if (existingIndicator) {
     existingIndicator.remove();
@@ -177,12 +189,12 @@ window.addEventListener('beforeunload', () => {
 // Monitor URL changes for Single Page Applications (like YouTube)
 function setupUrlChangeObserver() {
   let lastUrl = location.href;
-  
+
   const observer = new MutationObserver(() => {
     const url = location.href;
     if (url !== lastUrl) {
       lastUrl = url;
-      
+
       // Check if we should redirect
       chrome.storage.local.get(['enabled'], (result) => {
         if (result.enabled !== false) {
@@ -192,7 +204,7 @@ function setupUrlChangeObserver() {
       });
     }
   });
-  
+
   // Start observing
   observer.observe(document, {
     subtree: true,

@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>No Cookie YouTube Player</title>
+    <link rel="stylesheet" href="player.css">
+    <link rel="icon" type="image/png" href="../icons/icon48.png">
+</head>
+<body>
+    <div class="player-container">
+        <div id="video-container" class="video-wrapper">
+            <!-- Iframe will be injected here -->
+            <div class="loading">
+                <div class="spinner"></div>
+                <p>Loading privacy-enhanced player...</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="controls">
+        <button id="back-btn" class="control-btn" title="Go back to YouTube">
+            <svg viewBox="0 0 24 24" width="24" height="24">
+                <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/>
+            </svg>
+            Return to YouTube
+        </button>
+    </div>
+
+    <script src="player.js"></script>
+</body>
+</html>
