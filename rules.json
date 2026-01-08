@@ -1,53 +1,27 @@
 [
   {
-    "id": 1,
+    "id": 4,
     "priority": 1,
     "action": {
-      "type": "redirect",
-      "redirect": {
-        "transform": {
-          "host": "yout-ube.com",
-          "scheme": "https"
+      "type": "modifyHeaders",
+      "requestHeaders": [
+        {
+          "header": "Referer",
+          "operation": "set",
+          "value": "https://www.google.com/"
+        },
+        {
+          "header": "Origin",
+          "operation": "set",
+          "value": "https://www.google.com/"
         }
-      }
+      ]
     },
     "condition": {
-      "urlFilter": "||youtube.com/watch",
-      "resourceTypes": ["main_frame", "sub_frame"]
-    }
-  },
-  {
-    "id": 2,
-    "priority": 1,
-    "action": {
-      "type": "redirect",
-      "redirect": {
-        "transform": {
-          "host": "yout-ube.com",
-          "scheme": "https"
-        }
-      }
-    },
-    "condition": {
-      "urlFilter": "||youtube.com/shorts",
-      "resourceTypes": ["main_frame", "sub_frame"]
-    }
-  },
-  {
-    "id": 3,
-    "priority": 1,
-    "action": {
-      "type": "redirect",
-      "redirect": {
-        "transform": {
-          "host": "yout-ube.com",
-          "scheme": "https"
-        }
-      }
-    },
-    "condition": {
-      "urlFilter": "||youtube.com/embed/",
-      "resourceTypes": ["main_frame", "sub_frame"]
+      "urlFilter": "||youtube-nocookie.com/embed/",
+      "resourceTypes": [
+        "sub_frame"
+      ]
     }
   }
 ]
