@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "No Cookie YouTube",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Watch YouTube without cookies, trackers and annoying ads.",
   "author": "Md. Rafiur Rahman (rr-uchchash360) - https://github.com/rr-uchchash360",
   "icons": {
