@@ -37,8 +37,8 @@ A privacy-focused Chrome extension that allows you to watch YouTube without cook
 
 ## 🎯 Release Information
 
-### Latest Release: v1.0.0
-**Download:** [Release v1.0.0](https://github.com/rr-uchchash360/no-cookie-youtube/releases/tag/v1.0.0)
+### Latest Release: v1.0.1
+**Download:** [Release v1.0.1](https://github.com/rr-uchchash360/no-cookie-youtube/releases/tag/v1.0.1)
 
 ### Release Types Available:
 - **`.zip` Archive**: Source code and manual installation
@@ -223,7 +223,7 @@ The extension simply redirects to Google's own privacy-friendly YouTube domain a
 
 ## 🔄 Version History
 
-- **v1.0.0** (Current): Initial release with core features
+- **v1.0.1** (Current): Enhanced privacy redirection reliability and fixed minor bugs
 - Upcoming: Additional customization options and performance improvements
 
 ## ❓ FAQ
