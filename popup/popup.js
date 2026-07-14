@@ -162,6 +162,10 @@ document.addEventListener('DOMContentLoaded', function() {
     // Update theme UI
     const theme = settings.theme || 'system';
     updateThemeUI(theme);
+
+    // Update playback mode UI
+    const playbackMode = settings.playbackMode || 'current-tab';
+    updatePlaybackModeUI(playbackMode);
     
     // Update other inputs
     const redirectDelayInput = document.getElementById('redirectDelay');
@@ -235,6 +239,20 @@ document.addEventListener('DOMContentLoaded', function() {
       });
     });
     
+    // Playback mode selection
+    const playbackCards = document.querySelectorAll('.playback-card');
+    playbackCards.forEach(card => {
+      const newCard = card.cloneNode(true);
+      card.parentNode.replaceChild(newCard, card);
+
+      newCard.addEventListener('click', async function() {
+        const mode = this.dataset.playback;
+        await saveSetting('playbackMode', mode);
+        updatePlaybackModeUI(mode);
+        showSnackbar(`Playback mode changed to ${getPlaybackModeLabel(mode)}`);
+      });
+    });
+
     // Redirect delay input
     if (redirectDelayInput) {
       const newInput = redirectDelayInput.cloneNode(true);
@@ -284,7 +302,8 @@ document.addEventListener('DOMContentLoaded', function() {
               theme: 'system',
               redirectDelay: 100,
               showIndicator: true,
-              autoRefresh: true
+              autoRefresh: true,
+              playbackMode: 'current-tab'
             }
           });
           
@@ -293,6 +312,9 @@ document.addEventListener('DOMContentLoaded', function() {
           
           const theme = settings.theme || 'system';
           updateThemeUI(theme);
+          
+          const playbackMode = settings.playbackMode || 'current-tab';
+          updatePlaybackModeUI(playbackMode);
           
           const updatedDelayInput = document.getElementById('redirectDelay');
           const updatedShowIndicator = document.getElementById('showIndicator');
@@ -366,6 +388,32 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
   
+  function updatePlaybackModeUI(mode) {
+    const playbackCards = document.querySelectorAll('.playback-card');
+    const playbackText = document.querySelector('.playback-text');
+
+    playbackCards.forEach(card => {
+      card.classList.remove('active');
+      if (card.dataset.playback === mode) {
+        card.classList.add('active');
+      }
+    });
+
+    if (playbackText) {
+      playbackText.textContent = getPlaybackModeLabel(mode);
+    }
+  }
+
+  function getPlaybackModeLabel(mode) {
+    const labels = {
+      'new-tab': 'New Tab',
+      'current-tab': 'Current Tab',
+      'in-page-overlay': 'Overlay',
+      'floating-player': 'Floating'
+    };
+    return labels[mode] || 'Current Tab';
+  }
+
   async function saveSetting(key, value) {
     await sendMessage({
       action: 'updateSettings',

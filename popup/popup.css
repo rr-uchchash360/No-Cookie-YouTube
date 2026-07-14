@@ -1014,6 +1014,140 @@ input:disabled + .slider:before {
   font-size: 10px;
 }
 
+/* Playback Mode Selector */
+.playback-selector {
+  background: var(--bg-tertiary);
+  border-radius: 10px;
+  padding: 16px;
+  border: 1px solid var(--border-color);
+  margin-bottom: 14px;
+}
+
+.playback-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.playback-header h3 {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.playback-indicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 20px;
+  font-size: 11px;
+}
+
+.theme-light .playback-indicator {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.playback-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent-color);
+}
+
+.playback-description {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 14px;
+  line-height: 1.5;
+}
+
+.playback-options {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+.playback-card {
+  background: var(--bg-secondary);
+  border: 2px solid var(--border-color);
+  border-radius: 10px;
+  padding: 12px;
+  cursor: pointer;
+  transition: var(--transition);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 8px;
+}
+
+.playback-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--text-tertiary);
+}
+
+.playback-card.active {
+  border-color: var(--accent-color);
+  box-shadow: 0 0 0 1px var(--accent-color);
+}
+
+.playback-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  color: var(--accent-color);
+}
+
+.playback-card.active .playback-icon {
+  color: var(--accent-color);
+}
+
+.playback-info h4 {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-bottom: 2px;
+}
+
+.playback-info p {
+  font-size: 10px;
+  color: var(--text-secondary);
+  line-height: 1.3;
+}
+
+.playback-check {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 18px;
+  height: 18px;
+  background: var(--accent-color);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: var(--transition);
+}
+
+.playback-card.active .playback-check {
+  opacity: 1;
+}
+
+.playback-check i {
+  color: white;
+  font-size: 9px;
+}
+
 /* Option Groups */
 .option-group {
   display: flex;

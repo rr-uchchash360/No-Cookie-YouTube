@@ -1,10 +1,48 @@
-// Global variable to track indicator timeout
 let indicatorTimeout = null;
+let activePlayers = [];
+let activeOverlay = null;
+let openedNewTabVideos = new Set();
+let currentPlaybackMode = 'current-tab';
 
-// Listen for extension messages
+function interceptVideoClicks() {
+  document.addEventListener('click', (e) => {
+    const link = e.target.closest('a[href*="/watch?v="], a[href*="/shorts/"]');
+    if (!link) return;
+
+    const href = link.getAttribute('href');
+    let videoId = '';
+
+    if (href.includes('/watch?v=')) {
+      try {
+        const url = new URL(href, window.location.origin);
+        videoId = url.searchParams.get('v');
+      } catch {
+        const m = href.match(/[?&]v=([^&]+)/);
+        if (m) videoId = m[1];
+      }
+    } else if (href.includes('/shorts/')) {
+      videoId = href.split('/shorts/')[1].split('?')[0];
+    }
+
+    if (!videoId) return;
+
+    if (currentPlaybackMode === 'in-page-overlay' || currentPlaybackMode === 'floating-player') {
+      e.preventDefault();
+      e.stopPropagation();
+
+      if (currentPlaybackMode === 'in-page-overlay') {
+        if (activeOverlay) closeOverlay();
+        createOverlayPlayer(videoId);
+      } else {
+        if (activePlayers.some(p => p.videoId === videoId)) return;
+        createFloatingPlayer(videoId);
+      }
+    }
+  }, true);
+}
+
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === 'redirectStatusChanged') {
-    // When status changes, check if we should show indicator
     chrome.storage.local.get(['showIndicator'], (result) => {
       const showIndicator = result.showIndicator !== false;
       if (showIndicator) {
@@ -16,41 +54,41 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   return true;
 });
 
-// Get initial state
-chrome.storage.local.get(['enabled', 'showIndicator'], (result) => {
+chrome.storage.local.get(['enabled', 'showIndicator', 'playbackMode'], (result) => {
   const isEnabled = result.enabled !== false;
   const showIndicator = result.showIndicator !== false;
+  currentPlaybackMode = result.playbackMode || 'current-tab';
 
-  // Only show indicator if setting is enabled
   if (showIndicator) {
     updateRedirectState(isEnabled);
   }
 
-  // If enabled and on YouTube, try redirect
   if (isEnabled && window.location.hostname.includes('youtube.com')) {
     attemptRedirect();
   }
 });
 
+chrome.storage.onChanged.addListener((changes, area) => {
+  if (area === 'local' && changes.playbackMode) {
+    currentPlaybackMode = changes.playbackMode.newValue || 'current-tab';
+  }
+});
+
 function updateRedirectState(enabled) {
-  // Clear any existing timeout
   if (indicatorTimeout) {
     clearTimeout(indicatorTimeout);
     indicatorTimeout = null;
   }
 
-  // Remove any existing indicators first
   const existingIndicator = document.getElementById('redirect-indicator');
   if (existingIndicator) {
     existingIndicator.remove();
   }
 
-  // Create indicator based on state
   const indicator = document.createElement('div');
   indicator.id = 'redirect-indicator';
 
   if (enabled) {
-    // Green indicator for active redirect
     indicator.style.cssText = `
       position: fixed;
       top: 10px;
@@ -76,7 +114,6 @@ function updateRedirectState(enabled) {
       No Cookie YouTube: Active
     `;
   } else {
-    // Red indicator for disabled redirect
     indicator.style.cssText = `
       position: fixed;
       top: 10px;
@@ -105,19 +142,16 @@ function updateRedirectState(enabled) {
     `;
   }
 
-  // Function to append indicator to DOM
   const appendIndicator = () => {
     if (document.body) {
       document.body.appendChild(indicator);
 
-      // Start fade out after 2.7 seconds
       indicatorTimeout = setTimeout(() => {
         if (indicator.parentNode && indicator.style.opacity === '1') {
           indicator.style.opacity = '0';
         }
       }, 2700);
 
-      // Remove from DOM after 3 seconds
       indicatorTimeout = setTimeout(() => {
         if (indicator.parentNode) {
           indicator.remove();
@@ -127,54 +161,413 @@ function updateRedirectState(enabled) {
     }
   };
 
-  // Append to DOM based on current state
   if (document.readyState === 'loading') {
-    // Wait for DOM to be ready
     document.addEventListener('DOMContentLoaded', appendIndicator);
   } else {
-    // DOM is already ready
     appendIndicator();
   }
 }
 
-// Fallback redirect function
-function attemptRedirect() {
+async function attemptRedirect() {
   const currentUrl = window.location.href;
-
-  // Check if this is a YouTube video page or shorts
   const isWatchPage = currentUrl.includes('/watch?v=');
   const isShortsPage = currentUrl.includes('/shorts/');
   const isYouTubeDomain = currentUrl.includes('youtube.com');
   const isAlreadyRedirected = currentUrl.includes('player.html') || currentUrl.includes('youtube-nocookie.com');
 
-  if ((isWatchPage || isShortsPage) && isYouTubeDomain && !isAlreadyRedirected) {
-    try {
-      let videoId = '';
+  if (!((isWatchPage || isShortsPage) && isYouTubeDomain && !isAlreadyRedirected)) return;
 
-      if (isWatchPage) {
-        const urlParams = new URLSearchParams(window.location.search);
-        videoId = urlParams.get('v');
-      } else if (isShortsPage) {
-        videoId = currentUrl.split('/shorts/')[1].split('?')[0];
+  try {
+    let videoId = '';
+
+    if (isWatchPage) {
+      const urlParams = new URLSearchParams(window.location.search);
+      videoId = urlParams.get('v');
+    } else if (isShortsPage) {
+      videoId = currentUrl.split('/shorts/')[1].split('?')[0];
+    }
+
+    if (!videoId) return;
+
+    switch (currentPlaybackMode) {
+      case 'new-tab': {
+        if (openedNewTabVideos.has(videoId)) return;
+        openedNewTabVideos.add(videoId);
+        const playerUrl = chrome.runtime.getURL(`player/player.html?v=${videoId}`);
+        chrome.runtime.sendMessage({ action: 'openNewTab', url: playerUrl });
+        break;
       }
 
-      if (videoId) {
+      case 'current-tab': {
         const playerUrl = chrome.runtime.getURL(`player/player.html?v=${videoId}`);
         console.log('Redirecting to local player:', playerUrl);
-
-        // Use replace to avoid adding to history
-        setTimeout(() => {
-          window.location.replace(playerUrl);
-        }, 100);
+        setTimeout(() => { window.location.replace(playerUrl); }, 100);
+        break;
       }
-    } catch (error) {
-      console.error('Redirect failed:', error);
+
+      case 'in-page-overlay': {
+        if (activeOverlay && activeOverlay.dataset.videoId === videoId) return;
+        if (activeOverlay) closeOverlay();
+        createOverlayPlayer(videoId);
+        break;
+      }
+
+      case 'floating-player': {
+        if (activePlayers.some(p => p.videoId === videoId)) return;
+        createFloatingPlayer(videoId);
+        break;
+      }
     }
+  } catch (error) {
+    console.error('No Cookie YouTube error:', error);
   }
 }
 
-// Clean up before page unload (important for redirects)
-window.addEventListener('beforeunload', () => {
+function createOverlayPlayer(videoId) {
+  const overlay = document.createElement('div');
+  overlay.id = 'nco-overlay';
+  overlay.dataset.videoId = videoId;
+
+  overlay.style.cssText = `
+    position: fixed;
+    inset: 0;
+    z-index: 2147483647;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: ncoFadeIn 0.2s ease;
+  `;
+
+  const backdrop = document.createElement('div');
+  backdrop.style.cssText = `
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.75);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+  `;
+
+  const playerContainer = document.createElement('div');
+  playerContainer.style.cssText = `
+    position: relative;
+    width: 80vw;
+    max-width: 960px;
+    aspect-ratio: 16 / 9;
+    max-height: 80vh;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    z-index: 1;
+  `;
+
+  const closeBtn = document.createElement('button');
+  closeBtn.innerHTML = '&times;';
+  closeBtn.setAttribute('aria-label', 'Close overlay');
+  closeBtn.style.cssText = `
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 36px;
+    height: 36px;
+    background: rgba(0,0,0,0.6);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    font-size: 22px;
+    cursor: pointer;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
+    line-height: 1;
+  `;
+  closeBtn.onmouseenter = () => { closeBtn.style.background = 'rgba(255,0,0,0.8)'; };
+  closeBtn.onmouseleave = () => { closeBtn.style.background = 'rgba(0,0,0,0.6)'; };
+
+  const iframe = document.createElement('iframe');
+  iframe.src = `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&modestbranding=1&rel=0`;
+  iframe.allow = 'accelerometer; autoplay; gyroscope; picture-in-picture; fullscreen';
+  iframe.referrerPolicy = 'no-referrer';
+  iframe.style.cssText = `
+    width: 100%;
+    height: 100%;
+    border: none;
+  `;
+
+  const style = document.createElement('style');
+  style.textContent = `
+    @keyframes ncoFadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+  `;
+  document.head.appendChild(style);
+
+  playerContainer.appendChild(closeBtn);
+  playerContainer.appendChild(iframe);
+  overlay.appendChild(backdrop);
+  overlay.appendChild(playerContainer);
+  document.body.appendChild(overlay);
+
+  activeOverlay = overlay;
+
+  closeBtn.onclick = closeOverlay;
+
+  const escHandler = (e) => {
+    if (e.key === 'Escape') {
+      closeOverlay();
+      document.removeEventListener('keydown', escHandler);
+    }
+  };
+  document.addEventListener('keydown', escHandler);
+}
+
+function closeOverlay() {
+  if (!activeOverlay) return;
+  activeOverlay.remove();
+  activeOverlay = null;
+}
+
+function createFloatingPlayer(videoId) {
+  const player = document.createElement('div');
+  player.className = 'nco-floating-player';
+
+  const idx = activePlayers.length;
+  const offset = Math.min(idx * 30, 150);
+
+  player.style.cssText = `
+    position: fixed;
+    bottom: ${20 + offset}px;
+    right: ${20 + offset}px;
+    width: 400px;
+    height: 300px;
+    background: #0f0f0f;
+    border: 1px solid #3f3f3f;
+    border-radius: 8px;
+    overflow: hidden;
+    z-index: 2147483646;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    display: flex;
+    flex-direction: column;
+    font-family: Arial, Helvetica, sans-serif;
+    cursor: default;
+    user-select: none;
+    transition: box-shadow 0.2s;
+  `;
+  player.onmouseenter = () => { player.style.boxShadow = '0 12px 40px rgba(0,0,0,0.6)'; };
+  player.onmouseleave = () => { player.style.boxShadow = '0 8px 32px rgba(0,0,0,0.4)'; };
+
+  const header = document.createElement('div');
+  header.style.cssText = `
+    display: flex;
+    align-items: center;
+    padding: 8px 12px;
+    background: #1a1a1a;
+    border-bottom: 1px solid #3f3f3f;
+    cursor: grab;
+    flex-shrink: 0;
+    min-height: 36px;
+  `;
+  header.onmousedown = (e) => startDrag(e, player);
+
+  const title = document.createElement('span');
+  title.textContent = 'Now Playing';
+  title.style.cssText = `
+    flex: 1;
+    font-size: 12px;
+    color: #aaaaaa;
+    font-weight: 500;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  `;
+
+  const minimizeBtn = document.createElement('button');
+  minimizeBtn.innerHTML = '&#8722;';
+  minimizeBtn.title = 'Minimize';
+  minimizeBtn.style.cssText = `
+    background: transparent;
+    border: none;
+    color: #aaaaaa;
+    width: 24px;
+    height: 24px;
+    cursor: pointer;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: background 0.2s;
+    padding: 0;
+    line-height: 1;
+  `;
+  minimizeBtn.onmouseenter = () => { minimizeBtn.style.background = '#3f3f3f'; };
+  minimizeBtn.onmouseleave = () => { minimizeBtn.style.background = 'transparent'; };
+  minimizeBtn.onclick = (e) => { e.stopPropagation(); toggleMinimize(player); };
+
+  const closeBtn = document.createElement('button');
+  closeBtn.innerHTML = '&times;';
+  closeBtn.title = 'Close';
+  closeBtn.style.cssText = `
+    background: transparent;
+    border: none;
+    color: #aaaaaa;
+    width: 24px;
+    height: 24px;
+    cursor: pointer;
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: background 0.2s, color 0.2s;
+    margin-left: 4px;
+    padding: 0;
+    line-height: 1;
+  `;
+  closeBtn.onmouseenter = () => { closeBtn.style.background = 'rgba(255,0,0,0.3)'; closeBtn.style.color = '#ff4444'; };
+  closeBtn.onmouseleave = () => { closeBtn.style.background = 'transparent'; closeBtn.style.color = '#aaaaaa'; };
+  closeBtn.onclick = (e) => { e.stopPropagation(); closePlayer(player); };
+
+  header.appendChild(title);
+  header.appendChild(minimizeBtn);
+  header.appendChild(closeBtn);
+
+  const body = document.createElement('div');
+  body.style.cssText = `
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+  `;
+
+  const iframe = document.createElement('iframe');
+  iframe.src = `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&modestbranding=1&rel=0`;
+  iframe.allow = 'accelerometer; autoplay; gyroscope; picture-in-picture; fullscreen';
+  iframe.referrerPolicy = 'no-referrer';
+  iframe.style.cssText = `
+    width: 100%;
+    height: 100%;
+    border: none;
+  `;
+
+  body.appendChild(iframe);
+
+  const resizeHandle = document.createElement('div');
+  resizeHandle.style.cssText = `
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 16px;
+    height: 16px;
+    cursor: nwse-resize;
+    z-index: 5;
+    display: flex;
+    align-items: flex-end;
+    justify-content: flex-end;
+    padding: 2px;
+  `;
+  resizeHandle.innerHTML = `<svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+    <line x1="4" y1="10" x2="10" y2="4" stroke="#555" stroke-width="1.5"/>
+    <line x1="1" y1="10" x2="10" y2="1" stroke="#555" stroke-width="1.5"/>
+  </svg>`;
+  resizeHandle.onmousedown = (e) => startResize(e, player);
+
+  body.appendChild(resizeHandle);
+
+  player.appendChild(header);
+  player.appendChild(body);
+  document.body.appendChild(player);
+
+  activePlayers.push({
+    element: player,
+    body: body,
+    videoId: videoId,
+    minimized: false
+  });
+}
+
+function startDrag(e, playerEl) {
+  if (e.button !== 0) return;
+  const rect = playerEl.getBoundingClientRect();
+  const offsetX = e.clientX - rect.left;
+  const offsetY = e.clientY - rect.top;
+
+  const onMove = (e) => {
+    playerEl.style.left = (e.clientX - offsetX) + 'px';
+    playerEl.style.top = (e.clientY - offsetY) + 'px';
+    playerEl.style.right = 'auto';
+    playerEl.style.bottom = 'auto';
+  };
+
+  const onUp = () => {
+    document.removeEventListener('mousemove', onMove);
+    document.removeEventListener('mouseup', onUp);
+  };
+
+  document.addEventListener('mousemove', onMove);
+  document.addEventListener('mouseup', onUp);
+}
+
+function startResize(e, playerEl) {
+  e.preventDefault();
+  e.stopPropagation();
+  const startX = e.clientX;
+  const startY = e.clientY;
+  const startWidth = playerEl.offsetWidth;
+  const startHeight = playerEl.offsetHeight;
+
+  const onMove = (e) => {
+    const newWidth = Math.max(240, startWidth + (e.clientX - startX));
+    const newHeight = Math.max(180, startHeight + (e.clientY - startY));
+    playerEl.style.width = newWidth + 'px';
+    playerEl.style.height = newHeight + 'px';
+  };
+
+  const onUp = () => {
+    document.removeEventListener('mousemove', onMove);
+    document.removeEventListener('mouseup', onUp);
+  };
+
+  document.addEventListener('mousemove', onMove);
+  document.addEventListener('mouseup', onUp);
+}
+
+function toggleMinimize(playerEl) {
+  const entry = activePlayers.find(p => p.element === playerEl);
+  if (!entry) return;
+
+  if (entry.minimized) {
+    playerEl.style.height = entry._origHeight || '300px';
+    playerEl.style.width = entry._origWidth || '400px';
+    entry.body.style.display = '';
+    entry.minimized = false;
+  } else {
+    entry._origWidth = playerEl.style.width || '400px';
+    entry._origHeight = playerEl.style.height || '300px';
+    playerEl.style.height = '36px';
+    playerEl.style.width = '160px';
+    entry.body.style.display = 'none';
+    entry.minimized = true;
+  }
+}
+
+function closePlayer(playerEl) {
+  const idx = activePlayers.findIndex(p => p.element === playerEl);
+  if (idx !== -1) {
+    activePlayers.splice(idx, 1);
+  }
+  playerEl.remove();
+}
+
+function closeAllPlayers() {
+  while (activePlayers.length > 0) {
+    const p = activePlayers.pop();
+    p.element.remove();
+  }
+}
+
+function cleanup() {
   if (indicatorTimeout) {
     clearTimeout(indicatorTimeout);
     indicatorTimeout = null;
@@ -184,9 +577,17 @@ window.addEventListener('beforeunload', () => {
   if (existingIndicator) {
     existingIndicator.remove();
   }
-});
 
-// Monitor URL changes for Single Page Applications (like YouTube)
+  if (activeOverlay) {
+    closeOverlay();
+  }
+
+  closeAllPlayers();
+  openedNewTabVideos.clear();
+}
+
+window.addEventListener('beforeunload', cleanup);
+
 function setupUrlChangeObserver() {
   let lastUrl = location.href;
 
@@ -195,37 +596,29 @@ function setupUrlChangeObserver() {
     if (url !== lastUrl) {
       lastUrl = url;
 
-      // Check if we should redirect
       chrome.storage.local.get(['enabled'], (result) => {
-        if (result.enabled !== false) {
-          // Small delay to ensure page is ready
-          setTimeout(attemptRedirect, 100);
-        }
+        if (result.enabled === false) return;
+
+        if (activeOverlay) closeOverlay();
+        setTimeout(attemptRedirect, 100);
       });
     }
   });
 
-  // Start observing
   observer.observe(document, {
     subtree: true,
     childList: true
   });
 }
 
-// Initialize when document is ready
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', () => {
     setupUrlChangeObserver();
+    interceptVideoClicks();
   });
 } else {
   setupUrlChangeObserver();
+  interceptVideoClicks();
 }
 
-// Also run redirect on page load
-document.addEventListener('DOMContentLoaded', () => {
-  chrome.storage.local.get(['enabled'], (result) => {
-    if (result.enabled !== false) {
-      attemptRedirect();
-    }
-  });
-});
+

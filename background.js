@@ -14,17 +14,19 @@ let settings = {
   theme: 'system',
   redirectDelay: 100,
   showIndicator: true,
-  autoRefresh: true
+  autoRefresh: true,
+  playbackMode: 'current-tab'
 };
 
 // Initialize
-chrome.storage.local.get(['enabled', 'theme', 'redirectDelay', 'showIndicator', 'autoRefresh'], (result) => {
+chrome.storage.local.get(['enabled', 'theme', 'redirectDelay', 'showIndicator', 'autoRefresh', 'playbackMode'], (result) => {
   isEnabled = result.enabled !== false;
   settings = {
     theme: result.theme || 'system',
     redirectDelay: result.redirectDelay || 100,
     showIndicator: result.showIndicator !== false,
-    autoRefresh: result.autoRefresh !== false
+    autoRefresh: result.autoRefresh !== false,
+    playbackMode: result.playbackMode || 'current-tab'
   };
   
   console.log('Extension loaded, enabled:', isEnabled);
@@ -170,13 +172,19 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       sendResponse({ success: true });
       break;
       
+    case 'openNewTab':
+      chrome.tabs.create({ url: request.url, active: true });
+      sendResponse({ success: true });
+      break;
+
     case 'resetAll':
       // Reset all settings
       settings = {
         theme: 'system',
         redirectDelay: 100,
         showIndicator: true,
-        autoRefresh: true
+        autoRefresh: true,
+        playbackMode: 'current-tab'
       };
       isEnabled = true;
       chrome.storage.local.clear(() => {
@@ -204,7 +212,8 @@ chrome.runtime.onInstalled.addListener((details) => {
       theme: 'system',
       redirectDelay: 100,
       showIndicator: true,
-      autoRefresh: true
+      autoRefresh: true,
+      playbackMode: 'current-tab'
     };
     
     chrome.storage.local.set(defaultSettings);
