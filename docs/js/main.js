@@ -8,14 +8,45 @@
   var backToTop = document.querySelector('.back-to-top');
 
   /* ---- Mobile nav toggle ---- */
+  function trapFocus(e) {
+    var focusable = navLinks.querySelectorAll('a, button');
+    if (focusable.length === 0) return;
+    var first = focusable[0];
+    var last = focusable[focusable.length - 1];
+    if (e.key === 'Tab') {
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    }
+  }
+
+  function closeNav() {
+    navLinks.classList.remove('open');
+    toggle.setAttribute('aria-expanded', 'false');
+    toggle.focus();
+  }
+
   toggle.addEventListener('click', function () {
-    navLinks.classList.toggle('open');
+    var open = navLinks.classList.toggle('open');
+    toggle.setAttribute('aria-expanded', open);
+    if (open) {
+      var firstLink = navLinks.querySelector('a');
+      if (firstLink) firstLink.focus();
+    }
+  });
+
+  navLinks.addEventListener('keydown', trapFocus);
+
+  toggle.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && navLinks.classList.contains('open')) closeNav();
   });
 
   navLinks.querySelectorAll('a').forEach(function (link) {
-    link.addEventListener('click', function () {
-      navLinks.classList.remove('open');
-    });
+    link.addEventListener('click', closeNav);
   });
 
   /* ---- Scroll effects ---- */
@@ -55,12 +86,14 @@
 
   function getDownloadUrl(tag, asset) {
     if (asset) return asset.browser_download_url;
+    if (!tag) return '';
     return 'https://github.com/rr-uchchash360/No-Cookie-YouTube/archive/refs/tags/' + tag + '.zip';
   }
 
   function formatDate(dateStr) {
     if (!dateStr) return '';
     var d = new Date(dateStr);
+    if (isNaN(d.getTime())) return '';
     var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
     return months[d.getMonth()] + ' ' + d.getDate() + ', ' + d.getFullYear();
   }
@@ -70,10 +103,11 @@
     return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
   }
 
+  var _escapeDiv = document.createElement('div');
   function escapeHtml(text) {
-    var div = document.createElement('div');
-    div.appendChild(document.createTextNode(text));
-    return div.innerHTML;
+    _escapeDiv.innerHTML = '';
+    _escapeDiv.appendChild(document.createTextNode(text));
+    return _escapeDiv.innerHTML;
   }
 
   function renderMarkdown(body) {
@@ -119,7 +153,10 @@
       .replace(/\*(.+?)\*/g, '<em>$1</em>')
       .replace(/_(.+?)_/g, '<em>$1</em>')
       .replace(/`(.+?)`/g, '<code>$1</code>')
-      .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+      .replace(/\[([^\]]+)\]\(([^)]+)\)/g, function (_, text, url) {
+        if (!/^(https?:\/\/|\/|#|mailto:)/.test(url)) return text;
+        return '<a href="' + url.replace(/"/g, '&quot;') + '" target="_blank" rel="noopener">' + text + '</a>';
+      });
   }
 
   function extractWhatsNew(body) {
@@ -178,7 +215,7 @@
   function buildVersionHistory(releases) {
     var versionInfo = getEl('version-info');
     if (!versionInfo) return;
-    if (!releases || releases.length === 0) {
+    if (!Array.isArray(releases) || releases.length === 0) {
       versionInfo.innerHTML = '';
       return;
     }
@@ -215,7 +252,7 @@
     /* Check other versions (collapsible) */
     if (releases.length > 1) {
       html += '<div class="version-others">';
-      html += '<button class="version-toggle" id="version-toggle">';
+      html += '<button type="button" class="version-toggle" id="version-toggle">';
       html += '<span>Check other versions</span>';
       html += '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>';
       html += '</button>';
@@ -229,7 +266,7 @@
 
         html += '<div class="version-item' + (isLatest ? ' version-item-latest' : '') + '">';
         html += '<div class="version-header">';
-        html += '<button class="version-expand" aria-label="Toggle release notes">';
+        html += '<button type="button" class="version-expand" aria-label="Toggle release notes">';
         html += '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>';
         html += '</button>';
         html += '<div class="version-tag-group">';
@@ -266,6 +303,11 @@
         var isOpen = versionList.classList.toggle('open');
         toggleBtn.classList.toggle('open', isOpen);
         toggleBtn.setAttribute('aria-expanded', isOpen);
+        if (isOpen) {
+          versionList.style.maxHeight = versionList.scrollHeight + 'px';
+        } else {
+          versionList.style.maxHeight = '0';
+        }
       });
     }
 
@@ -284,7 +326,10 @@
 
   /* ---- Fetch releases ---- */
   function tryApi() {
-    fetch('https://api.github.com/repos/rr-uchchash360/No-Cookie-YouTube/releases?per_page=10')
+    var controller = new AbortController();
+    window.addEventListener('beforeunload', function () { controller.abort(); }, { once: true });
+
+    fetch('https://api.github.com/repos/rr-uchchash360/No-Cookie-YouTube/releases?per_page=10', { signal: controller.signal })
       .then(function (r) {
         if (!r.ok) throw new Error('API returned ' + r.status);
         return r.json();
@@ -296,7 +341,8 @@
           buildVersionHistory(FALLBACK_VERSIONS);
         }
       })
-      .catch(function () {
+      .catch(function (err) {
+        if (err.name === 'AbortError') return;
         buildVersionHistory(FALLBACK_VERSIONS);
       });
   }
@@ -304,32 +350,52 @@
   tryApi();
 
   /* ---- Theme toggle ---- */
+  function lsGet(key, def) {
+    try { return localStorage.getItem(key) || def; } catch (e) { return def; }
+  }
+  function lsSet(key, val) {
+    try { localStorage.setItem(key, val); } catch (e) {}
+  }
+
   function setTheme(theme) {
-    localStorage.setItem('theme', theme);
+    lsSet('theme', theme);
     var resolved = theme === 'system'
       ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
       : theme;
     document.documentElement.setAttribute('data-theme', resolved);
-    document.getElementById('theme-toggle').setAttribute('data-pref', theme);
+    var btn = document.getElementById('theme-toggle');
+    btn.setAttribute('data-pref', theme);
+    var labels = { dark: 'Switch to light theme', light: 'Switch to system theme', system: 'Switch to dark theme' };
+    btn.setAttribute('aria-label', labels[theme] || 'Switch theme');
   }
 
   function cycleTheme() {
-    var saved = localStorage.getItem('theme') || 'system';
+    var saved = lsGet('theme', 'system');
     var next = saved === 'dark' ? 'light' : saved === 'light' ? 'system' : 'dark';
     setTheme(next);
   }
 
-  setTheme(localStorage.getItem('theme') || 'system');
+  setTheme(lsGet('theme', 'system'));
   document.getElementById('theme-toggle').addEventListener('click', cycleTheme);
 
   if (window.matchMedia) {
     window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function () {
-      if ((localStorage.getItem('theme') || 'system') === 'system') {
+      if (lsGet('theme', 'system') === 'system') {
         var t = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
         document.documentElement.setAttribute('data-theme', t);
       }
     });
   }
+
+  /* ---- FAQ aria-expanded ---- */
+  document.querySelectorAll('.faq-item').forEach(function (item) {
+    var summary = item.querySelector('summary');
+    if (!summary) return;
+    item.addEventListener('toggle', function () {
+      summary.setAttribute('aria-expanded', item.open);
+    });
+    summary.setAttribute('aria-expanded', item.open);
+  });
 
   /* ---- Lightbox ---- */
   var lightbox = document.getElementById('lightbox');
