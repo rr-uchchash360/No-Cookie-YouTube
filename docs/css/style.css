@@ -1427,10 +1427,37 @@ code {
   opacity: 0.5;
 }
 
+.release-body h2 {
+  font-size: 1.05rem;
+  color: var(--text);
+  margin: 14px 0 6px;
+}
+
+.release-body h3 {
+  font-size: 1rem;
+  color: var(--text);
+  margin: 12px 0 6px;
+}
+
 .release-body h4 {
   font-size: 0.95rem;
   color: var(--text);
   margin: 12px 0 6px;
+}
+
+.release-body h5 {
+  font-size: 0.9rem;
+  color: var(--text);
+  margin: 10px 0 4px;
+}
+
+.release-body a {
+  color: var(--blue);
+  text-decoration: underline;
+}
+
+.release-body a:hover {
+  color: var(--accent);
 }
 
 .release-body code {
@@ -1629,10 +1656,37 @@ code {
   opacity: 0.4;
 }
 
+.version-body h2 {
+  font-size: 1rem;
+  color: var(--text);
+  margin: 10px 0 4px;
+}
+
+.version-body h3 {
+  font-size: 0.95rem;
+  color: var(--text);
+  margin: 10px 0 4px;
+}
+
 .version-body h4 {
   font-size: 0.9rem;
   color: var(--text);
   margin: 8px 0 4px;
+}
+
+.version-body h5 {
+  font-size: 0.85rem;
+  color: var(--text);
+  margin: 8px 0 4px;
+}
+
+.version-body a {
+  color: var(--blue);
+  text-decoration: underline;
+}
+
+.version-body a:hover {
+  color: var(--accent);
 }
 
 .version-body code {

@@ -73,22 +73,28 @@
 
   function renderMarkdown(body) {
     if (!body) return '';
-    var lines = body.split('\n');
+    var lines = body.replace(/\r/g, '').split('\n');
     var html = '';
     var inList = false;
 
     for (var i = 0; i < lines.length; i++) {
       var line = lines[i];
 
-      if (/^### /.test(line)) {
+      if (/^#### /.test(line)) {
+        if (inList) { html += '</ul>'; inList = false; }
+        html += '<h5>' + inlineFormat(line.replace(/^#### /, '')) + '</h5>';
+      } else if (/^### /.test(line)) {
         if (inList) { html += '</ul>'; inList = false; }
         html += '<h4>' + inlineFormat(line.replace(/^### /, '')) + '</h4>';
       } else if (/^## /.test(line)) {
         if (inList) { html += '</ul>'; inList = false; }
-        html += '<h4>' + inlineFormat(line.replace(/^## /, '')) + '</h4>';
-      } else if (/^- /.test(line)) {
+        html += '<h3>' + inlineFormat(line.replace(/^## /, '')) + '</h3>';
+      } else if (/^# /.test(line)) {
+        if (inList) { html += '</ul>'; inList = false; }
+        html += '<h2>' + inlineFormat(line.replace(/^# /, '')) + '</h2>';
+      } else if (/^[-*] /.test(line)) {
         if (!inList) { html += '<ul>'; inList = true; }
-        html += '<li>' + inlineFormat(line.replace(/^- /, '')) + '</li>';
+        html += '<li>' + inlineFormat(line.replace(/^[-*] /, '')) + '</li>';
       } else if (line.trim() === '') {
         if (inList) { html += '</ul>'; inList = false; }
       } else {
@@ -103,8 +109,42 @@
 
   function inlineFormat(text) {
     return escapeHtml(text)
+      .replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>')
       .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-      .replace(/`(.+?)`/g, '<code>$1</code>');
+      .replace(/\*(.+?)\*/g, '<em>$1</em>')
+      .replace(/_(.+?)_/g, '<em>$1</em>')
+      .replace(/`(.+?)`/g, '<code>$1</code>')
+      .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+  }
+
+  function extractWhatsNew(body) {
+    if (!body) return '';
+    var lines = body.replace(/\r/g, '').split('\n');
+    var inSection = false;
+    var sectionLines = [];
+
+    for (var i = 0; i < lines.length; i++) {
+      var line = lines[i];
+      var trimmed = line.replace(/^#+\s*/, '').trim().replace(/^[^a-zA-Z]+/, '');
+      if (/^What'?s\s*New/i.test(trimmed)) {
+        inSection = true;
+        continue;
+      }
+      if (inSection) {
+        if (/^#{1,6}\s(?:[^#]|$)/.test(line)) break;
+        sectionLines.push(line);
+      }
+    }
+
+    while (sectionLines.length > 0 && sectionLines[0].trim() === '') {
+      sectionLines.shift();
+    }
+
+    while (sectionLines.length > 0 && sectionLines[sectionLines.length - 1].trim() === '') {
+      sectionLines.pop();
+    }
+
+    return sectionLines.length > 0 ? sectionLines.join('\n') : body;
   }
 
   /* ---- Fallback version data ---- */
@@ -112,19 +152,19 @@
     {
       tag_name: 'v1.1.0',
       published_at: '2026-07-14T06:44:00Z',
-      body: "**No Cookie YouTube v1.1.0** — Playback Mode Update\n\n## What's New\n- 4 playback modes (New Tab, Current Tab, In-Page Overlay, Floating Player)\n- Click interception on video links for overlay and floating modes\n- Draggable, resizable, minimizable floating player\n- Stacked floating players for multiple videos",
+      body: "# No Cookie YouTube v1.1.0\n\n**Playback Mode Update**\n*Choose how videos open on YouTube*\n\n## \uD83C\uDFAF What's New\n\n* **4 Playback Modes**: Choose between New Tab, Current Tab, In-Page Overlay, or Floating Player\n* **In-Page Overlay**: Watch videos in a full-screen overlay with a dark blurred backdrop\n* **Floating Player**: A draggable, resizable PiP-style player that stays on top\n* **Click Interception**: Overlay and Floating modes intercept video link clicks",
       assets: []
     },
     {
       tag_name: 'v1.0.1',
       published_at: '2026-01-08T17:33:00Z',
-      body: "**No Cookie YouTube v1.0.1** — Bug Fix Release\n\n## Changes\n- Fixed hostname rewriting breaking some YouTube links\n- Improved redirect logic reliability\n- Bundled local privacy player\n- Credit: dariusgrassi for the redirect fix",
+      body: "# No Cookie YouTube v1.0.1\n\n**Bug Fix Release**\n*Improved privacy redirect reliability*\n\n## \uD83C\uDFAF What's New\n\n* **Bug Fix**: Fixed an issue in v1.0.0 where hostname rewriting could break some YouTube links\n* **Reliability**: Improved redirect logic\n* **Local Player**: Bundled local privacy player\n* Credit: dariusgrassi for the redirect fix",
       assets: []
     },
     {
       tag_name: 'v1.0.0',
       published_at: '2026-01-03T15:38:00Z',
-      body: "**No Cookie YouTube v1.0.0** — Initial Release\n\n## Features\n- Core privacy redirect to youtube-nocookie.com\n- Automatic background operation\n- YouTube Shorts support\n- Dark, light, and system themes\n- Configurable redirect delay",
+      body: "# No Cookie YouTube v1.0.0\n\n**Initial Release**\n*Privacy-focused YouTube without tracking*\n\n## \uD83C\uDFAF What's New\n\n* **Core Privacy**: Redirects YouTube to youtube-nocookie.com domain\n* **Automatic**: Works in background with no user interaction needed\n* **Shorts Support**: Works with YouTube Shorts\n* **Themes**: Dark, light, and system themes\n* **Configurable**: Adjustable redirect delay",
       assets: []
     }
   ];
@@ -160,7 +200,7 @@
     }
     html += '</div>';
     if (latest.body) {
-      html += '<div class="release-body">' + renderMarkdown(latest.body) + '</div>';
+      html += '<div class="release-body">' + renderMarkdown(extractWhatsNew(latest.body)) + '</div>';
     }
     html += '</div>';
 
@@ -196,7 +236,7 @@
         html += '</a>';
         html += '</div>';
         if (r.body) {
-          html += '<div class="version-body">' + renderMarkdown(r.body) + '</div>';
+          html += '<div class="version-body">' + renderMarkdown(extractWhatsNew(r.body)) + '</div>';
         }
         html += '</div>';
       }
