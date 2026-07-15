@@ -291,6 +291,34 @@
 
   tryApi();
 
+  /* ---- Theme toggle ---- */
+  function setTheme(theme) {
+    localStorage.setItem('theme', theme);
+    var resolved = theme === 'system'
+      ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+      : theme;
+    document.documentElement.setAttribute('data-theme', resolved);
+    document.getElementById('theme-toggle').setAttribute('data-pref', theme);
+  }
+
+  function cycleTheme() {
+    var saved = localStorage.getItem('theme') || 'system';
+    var next = saved === 'dark' ? 'light' : saved === 'light' ? 'system' : 'dark';
+    setTheme(next);
+  }
+
+  setTheme(localStorage.getItem('theme') || 'system');
+  document.getElementById('theme-toggle').addEventListener('click', cycleTheme);
+
+  if (window.matchMedia) {
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function () {
+      if ((localStorage.getItem('theme') || 'system') === 'system') {
+        var t = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        document.documentElement.setAttribute('data-theme', t);
+      }
+    });
+  }
+
   /* ---- Lightbox ---- */
   var lightbox = document.getElementById('lightbox');
   var lightboxImg = document.getElementById('lightbox-img');
