@@ -65,6 +65,11 @@
     return months[d.getMonth()] + ' ' + d.getDate() + ', ' + d.getFullYear();
   }
 
+  function formatNumber(n) {
+    if (n == null || isNaN(n)) return '';
+    return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  }
+
   function escapeHtml(text) {
     var div = document.createElement('div');
     div.appendChild(document.createTextNode(text));
@@ -198,6 +203,9 @@
     if (latest.published_at) {
       html += '<span class="whats-new-date">' + formatDate(latest.published_at) + '</span>';
     }
+    if (asset && asset.download_count != null) {
+      html += '<span class="download-count">' + formatNumber(asset.download_count) + ' downloads</span>';
+    }
     html += '</div>';
     if (latest.body) {
       html += '<div class="release-body">' + renderMarkdown(extractWhatsNew(latest.body)) + '</div>';
@@ -215,7 +223,8 @@
 
       for (var i = 0; i < releases.length; i++) {
         var r = releases[i];
-        var dlUrl = getDownloadUrl(r.tag_name, r.assets && r.assets[0] ? r.assets[0] : null);
+        var rAsset = r.assets && r.assets[0] ? r.assets[0] : null;
+        var dlUrl = getDownloadUrl(r.tag_name, rAsset);
         var isLatest = i === 0;
 
         html += '<div class="version-item' + (isLatest ? ' version-item-latest' : '') + '">';
@@ -229,6 +238,9 @@
         html += '</div>';
         if (r.published_at) {
           html += '<span class="version-date">' + formatDate(r.published_at) + '</span>';
+        }
+        if (rAsset && rAsset.download_count != null) {
+          html += '<span class="download-count">' + formatNumber(rAsset.download_count) + ' downloads</span>';
         }
         html += '<a href="' + dlUrl + '" class="version-dl-btn" download="No-Cookie-YouTube-' + r.tag_name + '.zip">';
         html += '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>';

@@ -1473,6 +1473,17 @@ code {
   font-weight: 500;
 }
 
+.download-count {
+  font-size: 0.75rem;
+  color: var(--green);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.whats-new-header .download-count {
+  margin-left: 8px;
+}
+
 .release-body {
   font-size: 0.88rem;
   color: var(--text-secondary);
@@ -1696,6 +1707,10 @@ code {
   border-color: var(--accent);
   color: var(--accent);
   background: var(--accent-dim);
+}
+
+.version-header .download-count {
+  font-size: 0.72rem;
 }
 
 .version-body {
