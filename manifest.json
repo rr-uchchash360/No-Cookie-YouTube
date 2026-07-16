@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "No Cookie YouTube",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Watch YouTube without cookies, trackers and annoying ads.",
   "author": "Md. Rafiur Rahman (rr-uchchash360) - https://github.com/rr-uchchash360",
   "icons": {
@@ -15,8 +15,25 @@
     "declarativeNetRequestWithHostAccess",
     "tabs",
     "alarms",
-    "downloads"
+    "downloads",
+    "contextMenus"
   ],
+  "commands": {
+    "toggle-extension": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+Y",
+        "mac": "Command+Shift+Y"
+      },
+      "description": "Toggle No Cookie mode on/off"
+    },
+    "check-updates": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+U",
+        "mac": "Command+Shift+U"
+      },
+      "description": "Check for extension updates"
+    }
+  },
   "host_permissions": [
     "*://*.youtube.com/*",
     "*://www.youtube-nocookie.com/*"

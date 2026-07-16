@@ -37,8 +37,8 @@ A privacy-focused Chrome extension that allows you to watch YouTube without cook
 
 ## 🎯 Release Information
 
-### Latest Release: v1.1.0
-**Download:** [Release v1.1.0](https://github.com/rr-uchchash360/no-cookie-youtube/releases/tag/v1.1.0)
+### Latest Release: v1.2.0
+**Download:** [Release v1.2.0](https://github.com/rr-uchchash360/no-cookie-youtube/releases/tag/v1.2.0)
 
 ### Release Types Available:
 - **`.zip` Archive**: Source code and manual installation
@@ -244,7 +244,9 @@ The extension simply redirects to Google's own privacy-friendly YouTube domain a
 
 ## 🔄 Version History
 
-- **v1.1.0** (Current): Added 4 Playback Modes (New Tab, Current Tab, In-Page Overlay, Floating Player), video link click interception for overlay/floating modes, draggable/resizable/minimizable floating player, stacked floating players for multiple videos
+- **v1.2.0** (Current): Added keyboard shortcuts (Windows/Linux: Ctrl+Shift+Y to toggle No Cookie Mode, Ctrl+Shift+U to check for updates; macOS: Command+Shift+Y to toggle No Cookie Mode, Command+Shift+U to check for updates), a right-click context menu ("Play in No Cookie Player" / "Toggle No Cookie Mode"), an automatic update checker with popup notifications and a download modal, and post-download installation instructions.
+Bug fixes: Extension no longer intercepts video clicks when disabled, and New Tab mode now correctly plays video only in the new tab without leaving it playing on the current page.
+- **v1.1.0**: Added 4 Playback Modes (New Tab, Current Tab, In-Page Overlay, Floating Player), video link click interception for overlay/floating modes, draggable/resizable/minimizable floating player, stacked floating players for multiple videos
 - **v1.0.1**: Enhanced privacy redirection reliability and fixed minor bugs
 - **v1.0.0**: Initial release with basic redirect functionality
 

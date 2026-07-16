@@ -3,6 +3,7 @@ let activePlayers = [];
 let activeOverlay = null;
 let openedNewTabVideos = new Set();
 let currentPlaybackMode = 'current-tab';
+let isEnabled = true;
 
 function interceptVideoClicks() {
   document.addEventListener('click', (e) => {
@@ -26,6 +27,8 @@ function interceptVideoClicks() {
 
     if (!videoId) return;
 
+    if (!isEnabled) return;
+
     if (currentPlaybackMode === 'in-page-overlay' || currentPlaybackMode === 'floating-player') {
       e.preventDefault();
       e.stopPropagation();
@@ -37,6 +40,13 @@ function interceptVideoClicks() {
         if (activePlayers.some(p => p.videoId === videoId)) return;
         createFloatingPlayer(videoId);
       }
+    } else if (currentPlaybackMode === 'new-tab') {
+      e.preventDefault();
+      e.stopPropagation();
+      if (openedNewTabVideos.has(videoId)) return;
+      openedNewTabVideos.add(videoId);
+      const playerUrl = chrome.runtime.getURL(`player/player.html?v=${videoId}`);
+      chrome.runtime.sendMessage({ action: 'openNewTab', url: playerUrl });
     }
   }, true);
 }
@@ -55,7 +65,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 });
 
 chrome.storage.local.get(['enabled', 'showIndicator', 'playbackMode'], (result) => {
-  const isEnabled = result.enabled !== false;
+  isEnabled = result.enabled !== false;
   const showIndicator = result.showIndicator !== false;
   currentPlaybackMode = result.playbackMode || 'current-tab';
 
@@ -69,8 +79,13 @@ chrome.storage.local.get(['enabled', 'showIndicator', 'playbackMode'], (result) 
 });
 
 chrome.storage.onChanged.addListener((changes, area) => {
-  if (area === 'local' && changes.playbackMode) {
-    currentPlaybackMode = changes.playbackMode.newValue || 'current-tab';
+  if (area === 'local') {
+    if (changes.playbackMode) {
+      currentPlaybackMode = changes.playbackMode.newValue || 'current-tab';
+    }
+    if (changes.enabled) {
+      isEnabled = changes.enabled.newValue !== false;
+    }
   }
 });
 
@@ -195,6 +210,7 @@ async function attemptRedirect() {
         openedNewTabVideos.add(videoId);
         const playerUrl = chrome.runtime.getURL(`player/player.html?v=${videoId}`);
         chrome.runtime.sendMessage({ action: 'openNewTab', url: playerUrl });
+        window.location.replace('https://www.youtube.com/');
         break;
       }
 

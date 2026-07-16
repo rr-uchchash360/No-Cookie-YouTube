@@ -271,6 +271,19 @@ chrome.runtime.onInstalled.addListener((details) => {
     console.log('Extension installed with default settings');
   }
 
+  // Create context menu items
+  chrome.contextMenus.create({
+    id: 'play-nocookie',
+    title: 'Play in No Cookie Player',
+    contexts: ['link'],
+    targetUrlPatterns: ['*://*.youtube.com/watch*', '*://*.youtube.com/shorts/*']
+  });
+  chrome.contextMenus.create({
+    id: 'toggle-nocookie',
+    title: 'Toggle No Cookie Mode',
+    contexts: ['all']
+  });
+
   // Set up daily update check
   chrome.alarms.create('checkUpdates', { periodInMinutes: 1440 });
   checkForUpdates();
@@ -305,5 +318,91 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
         "128": `icons/icon128${suffix}.png`
       }
     });
+  }
+});
+
+// ─── Keyboard Shortcuts ──────────────────────────────────────────
+
+chrome.commands.onCommand.addListener((command) => {
+  switch (command) {
+    case 'toggle-extension':
+      isEnabled = !isEnabled;
+      chrome.storage.local.set({ enabled: isEnabled });
+      updateIcon();
+      updateRules();
+      if (settings.autoRefresh) {
+        chrome.tabs.query({ url: '*://*.youtube.com/*' }, (tabs) => {
+          tabs.forEach(t => { if (t.id) chrome.tabs.reload(t.id); });
+        });
+      }
+      break;
+    case 'check-updates':
+      checkForUpdates();
+      break;
+  }
+});
+
+// ─── Context Menu ────────────────────────────────────────────────
+
+function getVideoIdFromUrl(url) {
+  try {
+    const u = new URL(url);
+    if (u.pathname.startsWith('/shorts/')) return u.pathname.split('/')[2].split('?')[0].split('#')[0];
+    return u.searchParams.get('v');
+  } catch {
+    return null;
+  }
+}
+
+chrome.contextMenus.onClicked.addListener((info, tab) => {
+  switch (info.menuItemId) {
+    case 'play-nocookie': {
+      const videoId = getVideoIdFromUrl(info.linkUrl) || getVideoIdFromUrl(tab.url);
+      if (videoId) {
+        const wasDisabled = !isEnabled;
+
+        if (wasDisabled) {
+          chrome.declarativeNetRequest.updateEnabledRulesets({
+            enableRulesetIds: ["ruleset_1"],
+            disableRulesetIds: []
+          });
+        }
+
+        chrome.tabs.create(
+          { url: chrome.runtime.getURL(`player/player.html?v=${videoId}`), active: true },
+          (createdTab) => {
+            if (wasDisabled && createdTab?.id) {
+              const onRemoved = (closedTabId) => {
+                if (closedTabId === createdTab.id) {
+                  chrome.tabs.onRemoved.removeListener(onRemoved);
+                  chrome.storage.local.get(['enabled'], (result) => {
+                    if (result.enabled === false) {
+                      chrome.declarativeNetRequest.updateEnabledRulesets({
+                        enableRulesetIds: [],
+                        disableRulesetIds: ["ruleset_1"]
+                      });
+                    }
+                  });
+                }
+              };
+              chrome.tabs.onRemoved.addListener(onRemoved);
+            }
+          }
+        );
+      }
+      break;
+    }
+    case 'toggle-nocookie': {
+      isEnabled = !isEnabled;
+      chrome.storage.local.set({ enabled: isEnabled });
+      updateIcon();
+      updateRules();
+      if (settings.autoRefresh) {
+        chrome.tabs.query({ url: '*://*.youtube.com/*' }, (tabs) => {
+          tabs.forEach(t => { if (t.id) chrome.tabs.reload(t.id); });
+        });
+      }
+      break;
+    }
   }
 });
