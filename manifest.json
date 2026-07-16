@@ -13,7 +13,9 @@
     "storage",
     "declarativeNetRequest",
     "declarativeNetRequestWithHostAccess",
-    "tabs"
+    "tabs",
+    "alarms",
+    "downloads"
   ],
   "host_permissions": [
     "*://*.youtube.com/*",

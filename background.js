@@ -204,7 +204,57 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   return true; // Keep message channel open for async response
 });
 
-// Install handler
+// ─── Update Checking ─────────────────────────────────────────────
+
+function compareVersions(v1, v2) {
+  const a = v1.split('.').map(Number);
+  const b = v2.split('.').map(Number);
+  for (let i = 0; i < Math.max(a.length, b.length); i++) {
+    const va = a[i] || 0;
+    const vb = b[i] || 0;
+    if (va > vb) return 1;
+    if (va < vb) return -1;
+  }
+  return 0;
+}
+
+function getAssetUrl(data) {
+  if (data.assets && data.assets.length) {
+    const zip = data.assets.find(a => a.name === 'No-Cookie-YouTube.zip');
+    if (zip) return zip.browser_download_url;
+    return data.assets[0].browser_download_url;
+  }
+  return `https://github.com/rr-uchchash360/No-Cookie-YouTube/releases/download/${data.tag_name}/No-Cookie-YouTube.zip`;
+}
+
+async function checkForUpdates() {
+  try {
+    const res = await fetch('https://api.github.com/repos/rr-uchchash360/No-Cookie-YouTube/releases/latest', { cache: 'no-cache' });
+    if (!res.ok) return;
+
+    const data = await res.json();
+    const latest = data.tag_name.replace(/^v/, '');
+    const current = chrome.runtime.getManifest().version;
+
+    if (compareVersions(latest, current) > 0) {
+      await chrome.storage.local.set({
+        updateAvailable: true,
+        latestVersion: latest,
+        downloadUrl: getAssetUrl(data),
+        releaseNotes: (data.body || '').substring(0, 500)
+      });
+      chrome.action.setBadgeText({ text: 'NEW' });
+      chrome.action.setBadgeBackgroundColor({ color: '#ff3333' });
+    } else {
+      await chrome.storage.local.remove(['updateAvailable', 'latestVersion', 'downloadUrl', 'releaseNotes']);
+      chrome.action.setBadgeText({ text: '' });
+    }
+  } catch (err) {
+    console.error('Update check failed:', err);
+  }
+}
+
+// Install / update handler
 chrome.runtime.onInstalled.addListener((details) => {
   if (details.reason === 'install') {
     const defaultSettings = {
@@ -220,6 +270,14 @@ chrome.runtime.onInstalled.addListener((details) => {
     settings = defaultSettings;
     console.log('Extension installed with default settings');
   }
+
+  // Set up daily update check
+  chrome.alarms.create('checkUpdates', { periodInMinutes: 1440 });
+  checkForUpdates();
+});
+
+chrome.alarms.onAlarm.addListener((alarm) => {
+  if (alarm.name === 'checkUpdates') checkForUpdates();
 });
 
 // Listen for storage changes

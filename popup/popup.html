@@ -28,6 +28,19 @@
         </button>
       </div>
 
+      <!-- Update Banner (hidden by default) -->
+      <div id="updateBanner" class="update-banner" style="display: none;">
+        <div class="update-banner-inner">
+          <div class="update-banner-icon"><i class="fas fa-arrow-up"></i></div>
+          <div class="update-banner-info">
+            <span class="update-banner-label">Update available</span>
+            <span class="update-banner-version" id="updateVersion"></span>
+          </div>
+          <button class="update-banner-btn" id="updateDownloadBtn"><i class="fas fa-download"></i></button>
+          <button class="update-banner-close" id="updateDismissBtn" title="Dismiss">&times;</button>
+        </div>
+      </div>
+
       <!-- Scrollable Content Area -->
       <div class="menu-content">
         <!-- Status Card - Made more compact -->
@@ -111,6 +124,31 @@
     <!-- Settings Menu (Options Page Loaded Here) -->
     <div id="settingsMenu" class="menu-view" style="display: none;">
       <!-- Content will be dynamically loaded -->
+    </div>
+  </div>
+
+  <!-- Install Instructions Modal -->
+  <div id="installModal" class="modal-overlay" style="display: none;">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-icon"><i class="fas fa-check-circle"></i></div>
+        <h3>Update Downloaded</h3>
+        <button class="modal-close-btn" id="modalCloseBtn">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p>To complete the update:</p>
+        <ol class="install-steps">
+          <li><span>Extract the downloaded ZIP file</span></li>
+          <li><span>Delete the old extension folder</span></li>
+          <li><span>Replace it with the extracted folder</span></li>
+          <li><span>Go to <code>chrome://extensions/</code> and click the refresh icon on <strong>No Cookie YouTube</strong></span></li>
+        </ol>
+      </div>
+      <div class="modal-footer">
+        <button class="youtube-btn youtube-btn-primary" id="openExtensionsBtn">
+          <i class="fas fa-external-link-alt"></i> Open chrome://extensions/
+        </button>
+      </div>
     </div>
   </div>
 

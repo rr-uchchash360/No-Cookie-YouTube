@@ -20,6 +20,17 @@ document.addEventListener('DOMContentLoaded', function() {
   // Store settings HTML content
   let settingsHTMLContent = null;
   
+  // Update banner elements
+  const updateBanner = document.getElementById('updateBanner');
+  const updateVersion = document.getElementById('updateVersion');
+  const updateDownloadBtn = document.getElementById('updateDownloadBtn');
+  const updateDismissBtn = document.getElementById('updateDismissBtn');
+
+  // Install modal elements
+  const installModal = document.getElementById('installModal');
+  const modalCloseBtn = document.getElementById('modalCloseBtn');
+  const openExtensionsBtn = document.getElementById('openExtensionsBtn');
+  
   // Initialize
   initialize();
   
@@ -35,6 +46,7 @@ document.addEventListener('DOMContentLoaded', function() {
       applyTheme(currentTheme);
       updateUI();
       initFeaturesToggle();
+      checkForUpdatesUI();
       isLoading = false;
     } catch (error) {
       console.error('Failed to initialize:', error);
@@ -531,7 +543,48 @@ document.addEventListener('DOMContentLoaded', function() {
       return '0.0.0';
     }
   }
-  
+
+  async function checkForUpdatesUI() {
+    const { updateAvailable, latestVersion, downloadUrl } = await chrome.storage.local.get([
+      'updateAvailable', 'latestVersion', 'downloadUrl'
+    ]);
+    if (updateAvailable && latestVersion && downloadUrl) {
+      updateVersion.textContent = `v${latestVersion}`;
+      updateBanner.style.display = 'block';
+    }
+  }
+
+  updateDismissBtn.addEventListener('click', () => {
+    updateBanner.style.display = 'none';
+    chrome.storage.local.set({ updateAvailable: false });
+    chrome.action.setBadgeText({ text: '' });
+  });
+
+  updateDownloadBtn.addEventListener('click', () => {
+    chrome.storage.local.get(['downloadUrl', 'latestVersion'], ({ downloadUrl, latestVersion }) => {
+      let url = downloadUrl;
+      if (!url || !url.endsWith('.zip')) {
+        url = `https://github.com/rr-uchchash360/No-Cookie-YouTube/releases/download/v${latestVersion}/No-Cookie-YouTube.zip`;
+      }
+      const filename = `No-Cookie-YouTube-v${latestVersion}.zip`;
+      chrome.downloads.download({ url, filename }, (downloadId) => {
+        if (chrome.runtime.lastError) {
+          showSnackbar('Download failed. Try again.', 'error');
+          return;
+        }
+        updateBanner.style.display = 'none';
+        installModal.style.display = 'flex';
+      });
+    });
+  });
+
+  modalCloseBtn.addEventListener('click', () => { installModal.style.display = 'none'; });
+  openExtensionsBtn.addEventListener('click', () => {
+    chrome.tabs.create({ url: 'chrome://extensions/', active: true });
+    installModal.style.display = 'none';
+    window.close();
+  });
+
   function showSnackbar(message, type = 'info') {
     const existingSnackbar = document.querySelector('.youtube-snackbar');
     if (existingSnackbar) {
