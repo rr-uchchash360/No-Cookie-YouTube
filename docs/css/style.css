@@ -1871,7 +1871,7 @@ code {
 }
 
 .version-body a {
-  color: var(--blue);
+  color: var(--accent);
   text-decoration: underline;
 }
 

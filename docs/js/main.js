@@ -114,40 +114,73 @@
     if (!body) return '';
     var lines = body.replace(/\r/g, '').split('\n');
     var html = '';
-    var inList = false;
+    var listIndents = [];
+
+    function closeListsAbove(indent) {
+      while (listIndents.length > 0 && listIndents[listIndents.length - 1] > indent) {
+        listIndents.pop();
+        html += '</li></ul>';
+      }
+    }
+
+    function closeAllLists() {
+      while (listIndents.length > 0) {
+        listIndents.pop();
+        html += '</li></ul>';
+      }
+    }
 
     for (var i = 0; i < lines.length; i++) {
       var line = lines[i];
 
       if (/^#### /.test(line)) {
-        if (inList) { html += '</ul>'; inList = false; }
+        closeAllLists();
         html += '<h5>' + inlineFormat(line.replace(/^#### /, '')) + '</h5>';
       } else if (/^### /.test(line)) {
-        if (inList) { html += '</ul>'; inList = false; }
+        closeAllLists();
         html += '<h4>' + inlineFormat(line.replace(/^### /, '')) + '</h4>';
       } else if (/^## /.test(line)) {
-        if (inList) { html += '</ul>'; inList = false; }
+        closeAllLists();
         html += '<h3>' + inlineFormat(line.replace(/^## /, '')) + '</h3>';
       } else if (/^# /.test(line)) {
-        if (inList) { html += '</ul>'; inList = false; }
+        closeAllLists();
         html += '<h2>' + inlineFormat(line.replace(/^# /, '')) + '</h2>';
-      } else if (/^[-*] /.test(line)) {
-        if (!inList) { html += '<ul>'; inList = true; }
-        html += '<li>' + inlineFormat(line.replace(/^[-*] /, '')) + '</li>';
+      } else if (/^(\s*)[-*]\s/.test(line)) {
+        var indent = line.match(/^(\s*)/)[1].length;
+        var content = inlineFormat(line.replace(/^\s*[-*]\s/, ''));
+
+        if (listIndents.length === 0) {
+          html += '<ul><li>' + content;
+          listIndents.push(indent);
+        } else if (indent > listIndents[listIndents.length - 1]) {
+          html += '<ul><li>' + content;
+          listIndents.push(indent);
+        } else if (indent === listIndents[listIndents.length - 1]) {
+          html += '</li><li>' + content;
+        } else {
+          closeListsAbove(indent);
+          if (listIndents.length > 0 && listIndents[listIndents.length - 1] === indent) {
+            html += '</li><li>' + content;
+          } else {
+            html += '<ul><li>' + content;
+            listIndents.push(indent);
+          }
+        }
       } else if (line.trim() === '') {
-        if (inList) { html += '</ul>'; inList = false; }
+        closeAllLists();
       } else {
-        if (inList) { html += '</ul>'; inList = false; }
+        closeAllLists();
         html += '<p>' + inlineFormat(line) + '</p>';
       }
     }
-    if (inList) html += '</ul>';
+    closeAllLists();
 
     return html;
   }
 
   function inlineFormat(text) {
     return escapeHtml(text)
+      .replace(/[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{FE00}-\u{FE0F}]/gu, '')
       .replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>')
       .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
       .replace(/\*(.+?)\*/g, '<em>$1</em>')
@@ -173,7 +206,7 @@
         continue;
       }
       if (inSection) {
-        if (/^#{1,6}\s(?:[^#]|$)/.test(line)) break;
+        if (/^#{1,2}\s(?:[^#]|$)/.test(line)) break;
         sectionLines.push(line);
       }
     }
@@ -319,6 +352,9 @@
           e.stopPropagation();
           item.classList.toggle('expanded');
           expandBtn.classList.toggle('open');
+          if (versionList && versionList.classList.contains('open')) {
+            versionList.style.maxHeight = versionList.scrollHeight + 'px';
+          }
         });
       }
     });
