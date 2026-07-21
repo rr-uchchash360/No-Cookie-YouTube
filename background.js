@@ -15,18 +15,26 @@ let settings = {
   redirectDelay: 100,
   showIndicator: true,
   autoRefresh: true,
-  playbackMode: 'current-tab'
+  playbackMode: 'current-tab',
+  playbackSpeedMin: 0.25,
+  playbackSpeedMax: 3,
+  playbackSpeedStep: 0.25,
+  shortcuts: { speedDown: '[', speedUp: ']' }
 };
 
 // Initialize
-chrome.storage.local.get(['enabled', 'theme', 'redirectDelay', 'showIndicator', 'autoRefresh', 'playbackMode'], (result) => {
+chrome.storage.local.get(['enabled', 'theme', 'redirectDelay', 'showIndicator', 'autoRefresh', 'playbackMode', 'playbackSpeedMin', 'playbackSpeedMax', 'playbackSpeedStep', 'shortcuts'], (result) => {
   isEnabled = result.enabled !== false;
   settings = {
     theme: result.theme || 'system',
     redirectDelay: result.redirectDelay || 100,
     showIndicator: result.showIndicator !== false,
     autoRefresh: result.autoRefresh !== false,
-    playbackMode: result.playbackMode || 'current-tab'
+    playbackMode: result.playbackMode || 'current-tab',
+    playbackSpeedMin: result.playbackSpeedMin ?? 0.25,
+    playbackSpeedMax: result.playbackSpeedMax ?? 3,
+    playbackSpeedStep: result.playbackSpeedStep ?? 0.25,
+    shortcuts: result.shortcuts || { speedDown: '[', speedUp: ']' }
   };
   
   console.log('Extension loaded, enabled:', isEnabled);
@@ -177,14 +185,42 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       sendResponse({ success: true });
       break;
 
+    case 'exportSettings':
+      chrome.storage.local.get(null, (data) => {
+        sendResponse({ success: true, settings: data });
+      });
+      return true;
+
+    case 'importSettings':
+      if (!request.settings || typeof request.settings !== 'object') {
+        sendResponse({ success: false, error: 'Invalid settings data' });
+        break;
+      }
+      chrome.storage.local.set(request.settings, () => {
+        Object.keys(request.settings).forEach(key => {
+          if (key === 'enabled') {
+            isEnabled = request.settings.enabled !== false;
+          } else if (settings.hasOwnProperty(key)) {
+            settings[key] = request.settings[key];
+          }
+        });
+        updateIcon();
+        updateRules();
+        sendResponse({ success: true });
+      });
+      return true;
+
     case 'resetAll':
-      // Reset all settings
       settings = {
         theme: 'system',
         redirectDelay: 100,
         showIndicator: true,
         autoRefresh: true,
-        playbackMode: 'current-tab'
+        playbackMode: 'current-tab',
+        playbackSpeedMin: 0.25,
+        playbackSpeedMax: 3,
+        playbackSpeedStep: 0.25,
+        shortcuts: { speedDown: '[', speedUp: ']' }
       };
       isEnabled = true;
       chrome.storage.local.clear(() => {
@@ -263,7 +299,11 @@ chrome.runtime.onInstalled.addListener((details) => {
       redirectDelay: 100,
       showIndicator: true,
       autoRefresh: true,
-      playbackMode: 'current-tab'
+      playbackMode: 'current-tab',
+      playbackSpeedMin: 0.25,
+      playbackSpeedMax: 3,
+      playbackSpeedStep: 0.25,
+      shortcuts: { speedDown: '[', speedUp: ']' }
     };
     
     chrome.storage.local.set(defaultSettings);

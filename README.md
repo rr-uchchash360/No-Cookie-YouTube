@@ -37,8 +37,8 @@ A privacy-focused Chrome extension that allows you to watch YouTube without cook
 
 ## 🎯 Release Information
 
-### Latest Release: v1.2.0
-**Download:** [Release v1.2.0](https://github.com/rr-uchchash360/no-cookie-youtube/releases/tag/v1.2.0)
+### Latest Release: v1.3.0
+**Download:** [Release v1.3.0](https://github.com/rr-uchchash360/no-cookie-youtube/releases/tag/v1.3.0)
 
 ### Release Types Available:
 - **`.zip` Archive**: Source code and manual installation
@@ -64,6 +64,9 @@ Each release includes:
 - **🎨 Theme Support**: Dark, light, and system theme options
 - **⚙️ Customizable**: Adjust redirect delay and other preferences
 - **🔄 Auto-refresh**: Option to refresh tabs when toggling the extension
+- **⏱️ Playback Speed Control**: Dedicated speed controls for all players with configurable range and keyboard shortcuts
+- **💾 Data Export/Import**: Export your settings to a file or import them for easy backup and restore
+
 
 ## 🚀 Usage
 
@@ -111,14 +114,29 @@ Choose where and how videos play when you click on YouTube:
 - **In-Page Overlay** — A full-screen overlay appears on top of the YouTube page with a dark, blurred backdrop (YouTube dimmed to ~25% visibility). Close via × button or Escape key.
 - **Floating Player** — A small, draggable, resizable player panel appears. Drag by its header, resize from the bottom-right corner, minimize to a corner pill. Click another video to stack multiple floating players.
 
+### Playback Speed
+All players now include dedicated playback speed controls:
+
+- **Speed Badge**: Shows current speed on hover (e.g. `1x`, `1.5x`, `2x`)
+- **Keyboard Shortcuts**: Use `[` and `]` (default) to decrease/increase speed — configurable in settings
+- **Configurable Range**: Set minimum speed (default 0.25x), maximum speed (default 3x), and step size (default 0.25x)
+
+### Keyboard Shortcuts
+Customize shortcut keys for playback speed adjustment:
+
+- **Speed Down**: Default `[` — click the keycap input to record a new key
+- **Speed Up**: Default `]` — click the keycap input to record a new key
+
 ### Advanced Options
 - **Redirect Delay**: Adjust delay before redirect (0-5000ms)
 - **Show Indicator**: Toggle visual indicators on YouTube pages
 - **Auto-refresh**: Automatically refresh YouTube tabs when toggling
 
-### Reset Options
-- Reset to default settings
-- Clear all extension data
+### Data Management
+- **Export Settings**: Download all settings as a JSON file for backup
+- **Import Settings**: Restore settings from a previously exported JSON file
+- **Reset to Defaults**: Reset all settings to factory defaults
+- **Reset All Data**: Clear all extension data including settings
 
 ## 🔧 How It Works
  
@@ -244,7 +262,8 @@ The extension simply redirects to Google's own privacy-friendly YouTube domain a
 
 ## 🔄 Version History
 
-- **v1.2.0** (Current): Added keyboard shortcuts (Windows/Linux: Ctrl+Shift+Y to toggle No Cookie Mode, Ctrl+Shift+U to check for updates; macOS: Command+Shift+Y to toggle No Cookie Mode, Command+Shift+U to check for updates), a right-click context menu ("Play in No Cookie Player" / "Toggle No Cookie Mode"), an automatic update checker with popup notifications and a download modal, and post-download installation instructions.
+- **v1.3.0** (Current): Added video title display in browser tab and floating player header via oEmbed. Added dedicated playback speed controls to all four player modes (New Tab, Current Tab, In-Page Overlay, Floating Player) with configurable range (min 0.25x, max 3x) and keyboard shortcuts (`[`/`]` by default). Added settings data export and import functionality. Redesigned settings page with a modern, organized layout.
+- **v1.2.0**: Added keyboard shortcuts (Windows/Linux: Ctrl+Shift+Y to toggle No Cookie Mode, Ctrl+Shift+U to check for updates; macOS: Command+Shift+Y to toggle No Cookie Mode, Command+Shift+U to check for updates), a right-click context menu ("Play in No Cookie Player" / "Toggle No Cookie Mode"), an automatic update checker with popup notifications and a download modal, and post-download installation instructions.
 Bug fixes: Extension no longer intercepts video clicks when disabled, and New Tab mode now correctly plays video only in the new tab without leaving it playing on the current page.
 - **v1.1.0**: Added 4 Playback Modes (New Tab, Current Tab, In-Page Overlay, Floating Player), video link click interception for overlay/floating modes, draggable/resizable/minimizable floating player, stacked floating players for multiple videos
 - **v1.0.1**: Enhanced privacy redirection reliability and fixed minor bugs
@@ -257,6 +276,9 @@ A: In-Page Overlay covers the full screen with a dark blurred backdrop (YouTube 
 
 **Q: Can I watch multiple videos at once in Floating Player mode?**  
 A: Yes! Clicking different video links while a Floating Player is open will stack additional players. Each player is independently movable, resizable, and closable.
+
+**Q: How do I change the playback speed?**  
+A: Press `[` to decrease speed and `]` to increase speed (default keys). The current speed badge appears on hover in all player modes. You can configure the speed range (min/max/step) and keyboard shortcuts in the settings page.
 
 **Q: Does this extension block ads?**  
 A: While it redirects to a privacy-friendly domain which typically has fewer ads, it's not primarily an ad blocker.

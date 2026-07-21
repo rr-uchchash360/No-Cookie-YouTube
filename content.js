@@ -4,6 +4,7 @@ let activeOverlay = null;
 let openedNewTabVideos = new Set();
 let currentPlaybackMode = 'current-tab';
 let isEnabled = true;
+let shortcuts = { speedDown: '[', speedUp: ']' };
 
 function interceptVideoClicks() {
   document.addEventListener('click', (e) => {
@@ -43,7 +44,6 @@ function interceptVideoClicks() {
     } else if (currentPlaybackMode === 'new-tab') {
       e.preventDefault();
       e.stopPropagation();
-      if (openedNewTabVideos.has(videoId)) return;
       openedNewTabVideos.add(videoId);
       const playerUrl = chrome.runtime.getURL(`player/player.html?v=${videoId}`);
       chrome.runtime.sendMessage({ action: 'openNewTab', url: playerUrl });
@@ -64,10 +64,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   return true;
 });
 
-chrome.storage.local.get(['enabled', 'showIndicator', 'playbackMode'], (result) => {
+chrome.storage.local.get(['enabled', 'showIndicator', 'playbackMode', 'shortcuts'], (result) => {
   isEnabled = result.enabled !== false;
   const showIndicator = result.showIndicator !== false;
   currentPlaybackMode = result.playbackMode || 'current-tab';
+  shortcuts = result.shortcuts || { speedDown: '[', speedUp: ']' };
 
   if (showIndicator) {
     updateRedirectState(isEnabled);
@@ -85,6 +86,9 @@ chrome.storage.onChanged.addListener((changes, area) => {
     }
     if (changes.enabled) {
       isEnabled = changes.enabled.newValue !== false;
+    }
+    if (changes.shortcuts) {
+      shortcuts = changes.shortcuts.newValue || { speedDown: '[', speedUp: ']' };
     }
   }
 });
@@ -239,6 +243,81 @@ async function attemptRedirect() {
   }
 }
 
+const speedDefaults = { min: 0.25, max: 3, step: 0.25 };
+
+function getSpeedConfig() {
+  return new Promise((resolve) => {
+    chrome.storage.local.get(
+      ['playbackSpeedMin', 'playbackSpeedMax', 'playbackSpeedStep'],
+      (result) => {
+        resolve({
+          min: result.playbackSpeedMin ?? speedDefaults.min,
+          max: result.playbackSpeedMax ?? speedDefaults.max,
+          step: result.playbackSpeedStep ?? speedDefaults.step,
+        });
+      }
+    );
+  });
+}
+
+function setupPlaybackSpeed(iframe, displayEl) {
+  let currentSpeed = 1;
+  let config = { ...speedDefaults };
+  getSpeedConfig().then((c) => { config = c; });
+
+  const onMessage = (e) => {
+    try {
+      const data = JSON.parse(e.data);
+      if (data.event === 'onPlaybackRateChange') {
+        currentSpeed = data.info;
+        if (displayEl) displayEl.textContent = formatSpeed(currentSpeed);
+      }
+    } catch (_) {}
+  };
+  window.addEventListener('message', onMessage);
+
+  function setSpeed(speed) {
+    currentSpeed = speed;
+    iframe.contentWindow.postMessage(
+      JSON.stringify({ event: 'command', func: 'setPlaybackRate', args: [speed] }),
+      '*'
+    );
+    if (displayEl) displayEl.textContent = formatSpeed(speed);
+  }
+
+  function changeSpeed(direction) {
+    let s = Math.round((currentSpeed + direction * config.step) / config.step) * config.step;
+    s = Math.max(config.min, Math.min(config.max, s));
+    if (s !== currentSpeed) setSpeed(s);
+  }
+
+  return { changeSpeed, getSpeed: () => currentSpeed, cleanup: () => window.removeEventListener('message', onMessage) };
+}
+
+function formatSpeed(speed) {
+  return speed.toFixed(2).replace(/\.?0+$/, '') + 'x';
+}
+
+let speedController = null;
+
+function addSpeedKeyboardListener() {
+  const handler = (e) => {
+    if (!activePlayers.length && !activeOverlay) return;
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === shortcuts.speedDown) {
+      e.preventDefault();
+      if (speedController) speedController.changeSpeed(-1);
+    } else if (e.key === shortcuts.speedUp) {
+      e.preventDefault();
+      if (speedController) speedController.changeSpeed(1);
+    }
+  };
+  document.addEventListener('keydown', handler);
+  return handler;
+}
+
+let _speedKeyHandler = null;
+
 function createOverlayPlayer(videoId) {
   const overlay = document.createElement('div');
   overlay.id = 'nco-overlay';
@@ -301,8 +380,30 @@ function createOverlayPlayer(videoId) {
   closeBtn.onmouseenter = () => { closeBtn.style.background = 'rgba(255,0,0,0.8)'; };
   closeBtn.onmouseleave = () => { closeBtn.style.background = 'rgba(0,0,0,0.6)'; };
 
+  const speedBadge = document.createElement('div');
+  speedBadge.textContent = '1x';
+  speedBadge.style.cssText = `
+    position: absolute;
+    bottom: 12px;
+    right: 12px;
+    background: rgba(0,0,0,0.7);
+    color: #fff;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 13px;
+    font-weight: 500;
+    z-index: 10;
+    opacity: 0;
+    transition: opacity 0.2s;
+    pointer-events: none;
+    font-family: Arial, sans-serif;
+  `;
+
+  playerContainer.onmouseenter = () => { speedBadge.style.opacity = '1'; };
+  playerContainer.onmouseleave = () => { speedBadge.style.opacity = '0'; };
+
   const iframe = document.createElement('iframe');
-  iframe.src = `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&modestbranding=1&rel=0`;
+  iframe.src = `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&modestbranding=1&rel=0&enablejsapi=1`;
   iframe.allow = 'accelerometer; autoplay; gyroscope; picture-in-picture; fullscreen';
   iframe.referrerPolicy = 'no-referrer';
   iframe.style.cssText = `
@@ -321,12 +422,15 @@ function createOverlayPlayer(videoId) {
   document.head.appendChild(style);
 
   playerContainer.appendChild(closeBtn);
+  playerContainer.appendChild(speedBadge);
   playerContainer.appendChild(iframe);
   overlay.appendChild(backdrop);
   overlay.appendChild(playerContainer);
   document.body.appendChild(overlay);
 
   activeOverlay = overlay;
+  if (speedController) speedController.cleanup();
+  speedController = setupPlaybackSpeed(iframe, speedBadge);
 
   closeBtn.onclick = closeOverlay;
 
@@ -337,12 +441,19 @@ function createOverlayPlayer(videoId) {
     }
   };
   document.addEventListener('keydown', escHandler);
+
+  if (!_speedKeyHandler) _speedKeyHandler = addSpeedKeyboardListener();
 }
 
 function closeOverlay() {
   if (!activeOverlay) return;
   activeOverlay.remove();
   activeOverlay = null;
+  if (speedController) { speedController.cleanup(); speedController = null; }
+  if (!activePlayers.length && _speedKeyHandler) {
+    document.removeEventListener('keydown', _speedKeyHandler);
+    _speedKeyHandler = null;
+  }
 }
 
 function createFloatingPlayer(videoId) {
@@ -389,6 +500,10 @@ function createFloatingPlayer(videoId) {
 
   const title = document.createElement('span');
   title.textContent = 'Now Playing';
+  fetch(`https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${videoId}&format=json`)
+    .then(res => res.json())
+    .then(data => { if (data.title) title.textContent = data.title; })
+    .catch(() => {});
   title.style.cssText = `
     flex: 1;
     font-size: 12px;
@@ -398,6 +513,22 @@ function createFloatingPlayer(videoId) {
     text-overflow: ellipsis;
     white-space: nowrap;
   `;
+
+  const speedBadge = document.createElement('span');
+  speedBadge.textContent = '1x';
+  speedBadge.style.cssText = `
+    font-size: 11px;
+    color: #888;
+    font-weight: 500;
+    margin-right: 8px;
+    padding: 2px 6px;
+    border-radius: 3px;
+    background: #2a2a2a;
+    transition: background 0.2s, color 0.2s;
+    cursor: default;
+  `;
+  header.onmouseenter = () => { speedBadge.style.background = '#3a3a3a'; speedBadge.style.color = '#ccc'; };
+  header.onmouseleave = () => { speedBadge.style.background = '#2a2a2a'; speedBadge.style.color = '#888'; };
 
   const minimizeBtn = document.createElement('button');
   minimizeBtn.innerHTML = '&#8722;';
@@ -446,6 +577,7 @@ function createFloatingPlayer(videoId) {
   closeBtn.onmouseleave = () => { closeBtn.style.background = 'transparent'; closeBtn.style.color = '#aaaaaa'; };
   closeBtn.onclick = (e) => { e.stopPropagation(); closePlayer(player); };
 
+  header.appendChild(speedBadge);
   header.appendChild(title);
   header.appendChild(minimizeBtn);
   header.appendChild(closeBtn);
@@ -458,7 +590,7 @@ function createFloatingPlayer(videoId) {
   `;
 
   const iframe = document.createElement('iframe');
-  iframe.src = `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&modestbranding=1&rel=0`;
+  iframe.src = `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&modestbranding=1&rel=0&enablejsapi=1`;
   iframe.allow = 'accelerometer; autoplay; gyroscope; picture-in-picture; fullscreen';
   iframe.referrerPolicy = 'no-referrer';
   iframe.style.cssText = `
@@ -468,6 +600,9 @@ function createFloatingPlayer(videoId) {
   `;
 
   body.appendChild(iframe);
+  if (speedController) speedController.cleanup();
+  speedController = setupPlaybackSpeed(iframe, speedBadge);
+  if (!_speedKeyHandler) _speedKeyHandler = addSpeedKeyboardListener();
 
   const resizeHandle = document.createElement('div');
   resizeHandle.style.cssText = `
@@ -574,6 +709,10 @@ function closePlayer(playerEl) {
     activePlayers.splice(idx, 1);
   }
   playerEl.remove();
+  if (!activePlayers.length && !activeOverlay) {
+    if (speedController) { speedController.cleanup(); speedController = null; }
+    if (_speedKeyHandler) { document.removeEventListener('keydown', _speedKeyHandler); _speedKeyHandler = null; }
+  }
 }
 
 function closeAllPlayers() {
@@ -600,6 +739,8 @@ function cleanup() {
 
   closeAllPlayers();
   openedNewTabVideos.clear();
+  if (speedController) { speedController.cleanup(); speedController = null; }
+  if (_speedKeyHandler) { document.removeEventListener('keydown', _speedKeyHandler); _speedKeyHandler = null; }
 }
 
 window.addEventListener('beforeunload', cleanup);

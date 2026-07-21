@@ -4,169 +4,198 @@
     <button class="settings-back-btn" id="settingsBackBtn">
       <i class="fas fa-arrow-left"></i>
     </button>
-    <div class="settings-logo-container">
-      <img src="../icons/icon48.png" alt="YouTube Redirector" class="settings-logo">
-    </div>
     <div class="settings-title-container">
-      <h1>No Cookie YouTube Settings</h1>
-      <div class="settings-subtitle">Configure according to your preferences</div>
+      <h1>Settings</h1>
+      <div class="settings-subtitle">Configure No Cookie YouTube</div>
     </div>
   </div>
 
   <!-- Scrollable Settings Content -->
   <div class="menu-content">
-    <!-- Theme Section -->
+
+    <!-- Appearance -->
     <div class="settings-section">
       <h2><i class="fas fa-palette"></i> Appearance</h2>
-      <div class="theme-selector">
-        <div class="theme-header">
-          <h3>Theme</h3>
-          <div class="theme-indicator" id="themeIndicator">
-            <span class="theme-dot"></span>
-            <span class="theme-text">System</span>
+      <div class="theme-options-row">
+        <div class="theme-card" data-theme="dark">
+          <div class="theme-card-icon"><i class="fas fa-moon"></i></div>
+          <div class="theme-card-label">Dark</div>
+          <div class="theme-check"><i class="fas fa-check"></i></div>
+        </div>
+        <div class="theme-card" data-theme="system">
+          <div class="theme-card-icon"><i class="fas fa-desktop"></i></div>
+          <div class="theme-card-label">System</div>
+          <div class="theme-check"><i class="fas fa-check"></i></div>
+        </div>
+        <div class="theme-card" data-theme="light">
+          <div class="theme-card-icon"><i class="fas fa-sun"></i></div>
+          <div class="theme-card-label">Light</div>
+          <div class="theme-check"><i class="fas fa-check"></i></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Playback Mode -->
+    <div class="settings-section">
+      <h2><i class="fas fa-play-circle"></i> Playback</h2>
+      <div class="option-group-label">Video Destination</div>
+      <div class="playback-options">
+        <div class="playback-card" data-playback="new-tab">
+          <div class="playback-icon">
+            <i class="fas fa-window-restore"></i>
+          </div>
+          <div class="playback-info">
+            <h4>New Tab</h4>
+            <p>Opens in a separate tab</p>
+          </div>
+          <div class="playback-check">
+            <i class="fas fa-check"></i>
           </div>
         </div>
-        <div class="theme-description">
-          Choose your preferred theme for the extension
+        <div class="playback-card" data-playback="current-tab">
+          <div class="playback-icon">
+            <i class="fas fa-window-maximize"></i>
+          </div>
+          <div class="playback-info">
+            <h4>Current Tab</h4>
+            <p>Replaces page with player</p>
+          </div>
+          <div class="playback-check">
+            <i class="fas fa-check"></i>
+          </div>
         </div>
-        <div class="theme-options">
-          <div class="theme-card" data-theme="dark">
-            <div class="theme-preview dark-theme">
-              <div class="preview-header"></div>
-              <div class="preview-content">
-                <div class="preview-card"></div>
-                <div class="preview-card"></div>
-              </div>
-            </div>
-            <div class="theme-info">
-              <h4>Dark</h4>
-              <p>Dark mode</p>
-            </div>
-            <div class="theme-check">
-              <i class="fas fa-check"></i>
+        <div class="playback-card" data-playback="in-page-overlay">
+          <div class="playback-icon">
+            <i class="fas fa-layer-group"></i>
+          </div>
+          <div class="playback-info">
+            <h4>Overlay</h4>
+            <p>Full overlay on YouTube</p>
+          </div>
+          <div class="playback-check">
+            <i class="fas fa-check"></i>
+          </div>
+        </div>
+        <div class="playback-card" data-playback="floating-player">
+          <div class="playback-icon">
+            <i class="fas fa-up-right-and-down-left-from-center"></i>
+          </div>
+          <div class="playback-info">
+            <h4>Floating</h4>
+            <p>Draggable PiP-style player</p>
+          </div>
+          <div class="playback-check">
+            <i class="fas fa-check"></i>
+          </div>
+        </div>
+      </div>
+
+      <div class="option-group-label">Speed Range</div>
+      <div class="option-group">
+        <div class="option-item">
+          <div class="option-info">
+            <h4>Minimum Speed</h4>
+            <p>Slowest speed (e.g. 0.25)</p>
+          </div>
+          <div class="option-control">
+            <div class="stepper">
+              <button class="stepper-btn stepper-minus" type="button" tabindex="-1" aria-label="Decrease">−</button>
+              <input type="number" id="playbackSpeedMin" min="0.1" max="1" step="0.05" value="0.25">
+              <button class="stepper-btn stepper-plus" type="button" tabindex="-1" aria-label="Increase">+</button>
             </div>
           </div>
-          <div class="theme-card" data-theme="light">
-            <div class="theme-preview light-theme">
-              <div class="preview-header"></div>
-              <div class="preview-content">
-                <div class="preview-card"></div>
-                <div class="preview-card"></div>
-              </div>
-            </div>
-            <div class="theme-info">
-              <h4>Light</h4>
-              <p>Light mode</p>
-            </div>
-            <div class="theme-check">
-              <i class="fas fa-check"></i>
+        </div>
+        <div class="option-item">
+          <div class="option-info">
+            <h4>Maximum Speed</h4>
+            <p>Fastest speed (e.g. 3)</p>
+          </div>
+          <div class="option-control">
+            <div class="stepper">
+              <button class="stepper-btn stepper-minus" type="button" tabindex="-1" aria-label="Decrease">−</button>
+              <input type="number" id="playbackSpeedMax" min="1" max="10" step="0.25" value="3">
+              <button class="stepper-btn stepper-plus" type="button" tabindex="-1" aria-label="Increase">+</button>
             </div>
           </div>
-          <div class="theme-card" data-theme="system">
-            <div class="theme-preview system-theme">
-              <div class="preview-header"></div>
-              <div class="preview-content">
-                <div class="preview-card"></div>
-                <div class="preview-card"></div>
-              </div>
+        </div>
+        <div class="option-item">
+          <div class="option-info">
+            <h4>Step Size</h4>
+            <p>Change per shortcut press</p>
+          </div>
+          <div class="option-control">
+            <div class="stepper">
+              <button class="stepper-btn stepper-minus" type="button" tabindex="-1" aria-label="Decrease">−</button>
+              <input type="number" id="playbackSpeedStep" min="0.05" max="1" step="0.05" value="0.25">
+              <button class="stepper-btn stepper-plus" type="button" tabindex="-1" aria-label="Increase">+</button>
             </div>
-            <div class="theme-info">
-              <h4>System</h4>
-              <p>Follows OS</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="speed-hint" id="speedHint">
+        <i class="fas fa-keyboard"></i>
+        <kbd id="speedDownKey">[</kbd>/<kbd id="speedUpKey">]</kbd> to adjust speed
+      </div>
+    </div>
+
+    <!-- Keyboard Shortcuts -->
+    <div class="settings-section">
+      <h2><i class="fas fa-keyboard"></i> Shortcuts</h2>
+      <div class="shortcuts-grid">
+        <div class="shortcut-card">
+          <div class="shortcut-card-row">
+            <div class="shortcut-card-icon">
+              <i class="fas fa-arrow-down"></i>
             </div>
-            <div class="theme-check">
-              <i class="fas fa-check"></i>
+            <div class="shortcut-card-info">
+              <span class="shortcut-card-label">Speed Down</span>
+              <span class="shortcut-card-desc">Click key to change</span>
             </div>
+          </div>
+          <div class="shortcut-keycap">
+            <input type="text" id="shortcutSpeedDown" class="shortcut-input" readonly placeholder="—" value="[">
+          </div>
+        </div>
+        <div class="shortcut-card">
+          <div class="shortcut-card-row">
+            <div class="shortcut-card-icon">
+              <i class="fas fa-arrow-up"></i>
+            </div>
+            <div class="shortcut-card-info">
+              <span class="shortcut-card-label">Speed Up</span>
+              <span class="shortcut-card-desc">Click key to change</span>
+            </div>
+          </div>
+          <div class="shortcut-keycap">
+            <input type="text" id="shortcutSpeedUp" class="shortcut-input" readonly placeholder="—" value="]">
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Playback Mode Section -->
+    <!-- Advanced -->
     <div class="settings-section">
-      <h2><i class="fas fa-play-circle"></i> Playback Mode</h2>
-      <div class="playback-selector">
-        <div class="playback-header">
-          <h3>Where to play videos</h3>
-          <div class="playback-indicator" id="playbackIndicator">
-            <span class="playback-dot"></span>
-            <span class="playback-text">Current Tab</span>
-          </div>
-        </div>
-        <div class="playback-description">
-          Choose how videos open when clicking on YouTube
-        </div>
-        <div class="playback-options">
-          <div class="playback-card" data-playback="new-tab">
-            <div class="playback-icon">
-              <i class="fas fa-window-restore"></i>
-            </div>
-            <div class="playback-info">
-              <h4>New Tab</h4>
-              <p>Opens video in a separate tab</p>
-            </div>
-            <div class="playback-check">
-              <i class="fas fa-check"></i>
-            </div>
-          </div>
-          <div class="playback-card" data-playback="current-tab">
-            <div class="playback-icon">
-              <i class="fas fa-window-maximize"></i>
-            </div>
-            <div class="playback-info">
-              <h4>Current Tab</h4>
-              <p>Replaces YouTube page with player</p>
-            </div>
-            <div class="playback-check">
-              <i class="fas fa-check"></i>
-            </div>
-          </div>
-          <div class="playback-card" data-playback="in-page-overlay">
-            <div class="playback-icon">
-              <i class="fas fa-layer-group"></i>
-            </div>
-            <div class="playback-info">
-              <h4>In-Page Overlay</h4>
-              <p>Full overlay, YouTube dimmed behind</p>
-            </div>
-            <div class="playback-check">
-              <i class="fas fa-check"></i>
-            </div>
-          </div>
-          <div class="playback-card" data-playback="floating-player">
-            <div class="playback-icon">
-              <i class="fas fa-up-right-and-down-left-from-center"></i>
-            </div>
-            <div class="playback-info">
-              <h4>Floating Player</h4>
-              <p>Draggable PiP-style player on top</p>
-            </div>
-            <div class="playback-check">
-              <i class="fas fa-check"></i>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Advanced Options Section -->
-    <div class="settings-section">
-      <h2><i class="fas fa-sliders-h"></i> Advanced Options</h2>
+      <h2><i class="fas fa-sliders-h"></i> Advanced</h2>
       <div class="option-group">
         <div class="option-item">
           <div class="option-info">
             <h4>Redirect Delay</h4>
-            <p>Time to wait before redirecting (milliseconds)</p>
+            <p>Wait time before redirecting (ms)</p>
           </div>
           <div class="option-control">
-            <input type="number" id="redirectDelay" min="0" max="5000" step="100" value="100">
+            <div class="stepper">
+              <button class="stepper-btn stepper-minus" type="button" tabindex="-1" aria-label="Decrease">−</button>
+              <input type="number" id="redirectDelay" min="0" max="5000" step="100" value="100">
+              <button class="stepper-btn stepper-plus" type="button" tabindex="-1" aria-label="Increase">+</button>
+            </div>
             <span>ms</span>
           </div>
         </div>
         <div class="option-item">
           <div class="option-info">
-            <h4>Show Redirect Indicator</h4>
-            <p>Display visual indicator when redirect occurs</p>
+            <h4>Redirect Indicator</h4>
+            <p>Show visual cue on redirect</p>
           </div>
           <div class="option-control">
             <label class="switch small">
@@ -177,8 +206,8 @@
         </div>
         <div class="option-item">
           <div class="option-info">
-            <h4>Auto-refresh on Toggle</h4>
-            <p>Refresh YouTube tabs when toggling redirect</p>
+            <h4>Auto-refresh Tabs</h4>
+            <p>Refresh YouTube tabs on toggle</p>
           </div>
           <div class="option-control">
             <label class="switch small">
@@ -190,13 +219,22 @@
       </div>
     </div>
 
-    <!-- Reset Section -->
+    <!-- Data -->
     <div class="settings-section">
-      <h2><i class="fas fa-redo"></i> Reset</h2>
-      <div class="reset-options">
+      <h2><i class="fas fa-database"></i> Data</h2>
+      <div class="data-actions">
+        <button class="reset-btn" id="exportSettingsBtn">
+          <i class="fas fa-file-export"></i>
+          <span>Export Settings</span>
+        </button>
+        <button class="reset-btn" id="importSettingsBtn">
+          <i class="fas fa-file-import"></i>
+          <span>Import Settings</span>
+        </button>
+        <input type="file" id="importFileInput" accept=".json" style="display:none">
         <button class="reset-btn" id="resetSettingsBtn">
           <i class="fas fa-undo"></i>
-          <span>Reset to Default Settings</span>
+          <span>Reset to Defaults</span>
         </button>
         <button class="reset-btn danger" id="resetAllBtn">
           <i class="fas fa-trash"></i>
@@ -205,19 +243,18 @@
       </div>
     </div>
 
-    <!-- Info Section -->
+    <!-- About -->
     <div class="info-section">
       <h3><i class="fas fa-info-circle"></i> About</h3>
-      <div class="info-content" id="infoContent">
-        <!-- Will be populated by JavaScript -->
-      </div>
+      <div class="info-content" id="infoContent"></div>
     </div>
+
   </div>
 
-  <!-- Footer - Fixed at bottom -->
+  <!-- Footer -->
   <div class="footer">
     <p class="footer-text">
-      <i class="fas fa-shield-alt"></i> No tracking • No analytics • Privacy first
+      <i class="fas fa-shield-alt"></i> No tracking &bull; No analytics &bull; Privacy first
     </p>
     <p class="footer-note">
       Changes are saved automatically

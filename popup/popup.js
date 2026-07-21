@@ -183,12 +183,31 @@ document.addEventListener('DOMContentLoaded', function() {
     const redirectDelayInput = document.getElementById('redirectDelay');
     const showIndicatorCheckbox = document.getElementById('showIndicator');
     const autoRefreshCheckbox = document.getElementById('autoRefresh');
+    const playbackSpeedMin = document.getElementById('playbackSpeedMin');
+    const playbackSpeedMax = document.getElementById('playbackSpeedMax');
+    const playbackSpeedStep = document.getElementById('playbackSpeedStep');
     const infoContent = document.getElementById('infoContent');
     
     if (redirectDelayInput) redirectDelayInput.value = settings.redirectDelay || 100;
     if (showIndicatorCheckbox) showIndicatorCheckbox.checked = settings.showIndicator !== false;
     if (autoRefreshCheckbox) autoRefreshCheckbox.checked = settings.autoRefresh !== false;
-    
+    if (playbackSpeedMin) playbackSpeedMin.value = settings.playbackSpeedMin ?? 0.25;
+    if (playbackSpeedMax) playbackSpeedMax.value = settings.playbackSpeedMax ?? 3;
+    if (playbackSpeedStep) playbackSpeedStep.value = settings.playbackSpeedStep ?? 0.25;
+
+    // Populate shortcut inputs
+    const shortcuts = settings.shortcuts || {};
+    const speedDownInput = document.getElementById('shortcutSpeedDown');
+    const speedUpInput = document.getElementById('shortcutSpeedUp');
+    if (speedDownInput) speedDownInput.value = shortcuts.speedDown || '[';
+    if (speedUpInput) speedUpInput.value = shortcuts.speedUp || ']';
+
+    // Update speed hint with actual shortcut keys
+    const speedDownKey = document.getElementById('speedDownKey');
+    const speedUpKey = document.getElementById('speedUpKey');
+    if (speedDownKey) speedDownKey.textContent = shortcuts.speedDown || '[';
+    if (speedUpKey) speedUpKey.textContent = shortcuts.speedUp || ']';
+
     // Populate info section with clickable Bangladesh flag
     if (infoContent) {
       infoContent.innerHTML = `
@@ -201,7 +220,7 @@ document.addEventListener('DOMContentLoaded', function() {
             </svg>
           </span>
         </p>
-        <p><strong>Privacy:</strong> This extension does not collect any user data.</p>
+
       `;
       
       // Click event listener for the flag
@@ -300,6 +319,19 @@ document.addEventListener('DOMContentLoaded', function() {
       });
     }
     
+    // Playback speed inputs
+    [playbackSpeedMin, playbackSpeedMax, playbackSpeedStep].forEach((input) => {
+      if (!input) return;
+      const newInput = input.cloneNode(true);
+      input.parentNode.replaceChild(newInput, input);
+      newInput.addEventListener('change', async function() {
+        const val = parseFloat(this.value);
+        if (isNaN(val) || val <= 0) return;
+        await saveSetting(this.id, val);
+        showSnackbar(`${this.id.replace('playbackSpeed', '')} speed updated`);
+      });
+    });
+
     // Reset settings
     const resetSettingsBtn = document.getElementById('resetSettingsBtn');
     if (resetSettingsBtn) {
@@ -315,7 +347,11 @@ document.addEventListener('DOMContentLoaded', function() {
               redirectDelay: 100,
               showIndicator: true,
               autoRefresh: true,
-              playbackMode: 'current-tab'
+              playbackMode: 'current-tab',
+              playbackSpeedMin: 0.25,
+              playbackSpeedMax: 3,
+              playbackSpeedStep: 0.25,
+              shortcuts: { speedDown: '[', speedUp: ']' }
             }
           });
           
@@ -331,10 +367,20 @@ document.addEventListener('DOMContentLoaded', function() {
           const updatedDelayInput = document.getElementById('redirectDelay');
           const updatedShowIndicator = document.getElementById('showIndicator');
           const updatedAutoRefresh = document.getElementById('autoRefresh');
+          const updatedSpeedMin = document.getElementById('playbackSpeedMin');
+          const updatedSpeedMax = document.getElementById('playbackSpeedMax');
+          const updatedSpeedStep = document.getElementById('playbackSpeedStep');
+          const updatedSpeedDown = document.getElementById('shortcutSpeedDown');
+          const updatedSpeedUp = document.getElementById('shortcutSpeedUp');
           
           if (updatedDelayInput) updatedDelayInput.value = settings.redirectDelay || 100;
           if (updatedShowIndicator) updatedShowIndicator.checked = settings.showIndicator !== false;
           if (updatedAutoRefresh) updatedAutoRefresh.checked = settings.autoRefresh !== false;
+          if (updatedSpeedMin) updatedSpeedMin.value = settings.playbackSpeedMin ?? 0.25;
+          if (updatedSpeedMax) updatedSpeedMax.value = settings.playbackSpeedMax ?? 3;
+          if (updatedSpeedStep) updatedSpeedStep.value = settings.playbackSpeedStep ?? 0.25;
+          if (updatedSpeedDown) updatedSpeedDown.value = (settings.shortcuts && settings.shortcuts.speedDown) || '[';
+          if (updatedSpeedUp) updatedSpeedUp.value = (settings.shortcuts && settings.shortcuts.speedUp) || ']';
           
           showSnackbar('Settings reset to defaults');
         }
@@ -357,6 +403,143 @@ document.addEventListener('DOMContentLoaded', function() {
         }
       });
     }
+
+    // Keyboard shortcut inputs
+    const currentShortcuts = settings.shortcuts || {};
+    initShortcutInput('shortcutSpeedDown', 'speedDown', currentShortcuts);
+    initShortcutInput('shortcutSpeedUp', 'speedUp', currentShortcuts);
+
+    // Export settings
+    const exportBtn = document.getElementById('exportSettingsBtn');
+    if (exportBtn) {
+      const newExportBtn = exportBtn.cloneNode(true);
+      exportBtn.parentNode.replaceChild(newExportBtn, exportBtn);
+      newExportBtn.addEventListener('click', async () => {
+        try {
+          const response = await sendMessage({ action: 'exportSettings' });
+          if (response.success && response.settings) {
+            const clean = {};
+            Object.keys(response.settings).forEach(key => {
+              if (!key.startsWith('chrome') && key !== 'updateAvailable' && key !== 'latestVersion' && key !== 'downloadUrl' && key !== 'releaseNotes') {
+                clean[key] = response.settings[key];
+              }
+            });
+            clean._exportedAt = new Date().toISOString();
+            clean._version = extensionVersion;
+            const blob = new Blob([JSON.stringify(clean, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            const date = new Date().toISOString().split('T')[0];
+            a.download = `no-cookie-youtube-settings-${date}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+            showSnackbar('Settings exported successfully', 'success');
+          }
+        } catch (err) {
+          showSnackbar('Export failed: ' + err.message, 'error');
+        }
+      });
+    }
+
+    // Import settings
+    const importFileInput = document.getElementById('importFileInput');
+    const importBtn = document.getElementById('importSettingsBtn');
+    if (importBtn) {
+      const newImportBtn = importBtn.cloneNode(true);
+      importBtn.parentNode.replaceChild(newImportBtn, importBtn);
+      newImportBtn.addEventListener('click', () => {
+        if (importFileInput) importFileInput.click();
+      });
+    }
+    if (importFileInput) {
+      const newFileInput = importFileInput.cloneNode(true);
+      importFileInput.parentNode.replaceChild(newFileInput, importFileInput);
+      newFileInput.addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        try {
+          const text = await file.text();
+          const data = JSON.parse(text);
+          if (!data || typeof data !== 'object') {
+            throw new Error('Invalid JSON: expected an object');
+          }
+          const response = await sendMessage({ action: 'importSettings', settings: data });
+          if (response.success) {
+            showSnackbar('Settings imported successfully', 'success');
+            setTimeout(() => window.location.reload(), 1200);
+          } else {
+            throw new Error(response.error || 'Import failed');
+          }
+        } catch (err) {
+          showSnackbar('Import failed: ' + err.message, 'error');
+        }
+        newFileInput.value = '';
+      });
+    }
+
+    // Stepper buttons
+    document.querySelectorAll('.stepper').forEach(stepper => {
+      const input = stepper.querySelector('input[type="number"]');
+      const minus = stepper.querySelector('.stepper-minus');
+      const plus = stepper.querySelector('.stepper-plus');
+      if (!input || !minus || !plus) return;
+
+      const step = parseFloat(input.step) || 1;
+      const min = input.min !== '' ? parseFloat(input.min) : -Infinity;
+      const max = input.max !== '' ? parseFloat(input.max) : Infinity;
+
+      minus.addEventListener('click', () => {
+        const val = parseFloat(input.value) || 0;
+        input.value = Math.max(min, +(val - step).toFixed(4));
+        input.dispatchEvent(new Event('change', { bubbles: true }));
+      });
+
+      plus.addEventListener('click', () => {
+        const val = parseFloat(input.value) || 0;
+        input.value = Math.min(max, +(val + step).toFixed(4));
+        input.dispatchEvent(new Event('change', { bubbles: true }));
+      });
+    });
+  }
+  
+  function initShortcutInput(inputId, shortcutKey, currentShortcuts) {
+    const input = document.getElementById(inputId);
+    if (!input) return;
+    const newInput = input.cloneNode(true);
+    input.parentNode.replaceChild(newInput, input);
+
+    newInput.addEventListener('focus', function() {
+      this.classList.add('recording');
+      this.value = '...';
+      this.select();
+
+      const onKeyDown = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const key = e.key;
+        if (key === 'Escape') {
+          this.classList.remove('recording');
+          this.value = this.dataset.originalValue || '';
+          document.removeEventListener('keydown', onKeyDown);
+          this.blur();
+          return;
+        }
+        this.value = key;
+        this.dataset.originalValue = key;
+        this.classList.remove('recording');
+        saveSetting('shortcuts', { ...currentShortcuts, [shortcutKey]: key });
+        showSnackbar(`Shortcut "${key}" saved`);
+        document.removeEventListener('keydown', onKeyDown);
+        this.blur();
+      };
+      document.addEventListener('keydown', onKeyDown);
+
+      this.addEventListener('blur', () => {
+        document.removeEventListener('keydown', onKeyDown);
+        this.classList.remove('recording');
+      }, { once: true });
+    });
   }
   
   function initFeaturesToggle() {
